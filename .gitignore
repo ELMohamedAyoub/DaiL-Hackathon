@@ -1,0 +1,9 @@
+# AI assistant instruction/context files — local only, never committed
+CLAUDE.md
+DESIGN.md
+AGENTS.md
+**/CLAUDE.md
+**/DESIGN.md
+**/AGENTS.md
+.claude/
+**/.claude/
