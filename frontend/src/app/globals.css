@@ -600,19 +600,114 @@ main section.bg-surface,
   .report-nav { background: var(--color-paper); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 
+.ask-widget {
+  position: fixed;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.ask-launcher {
+  border: none;
+  border-radius: 999px;
+  background: var(--color-navy);
+  padding: 0.75rem 1.25rem;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 800;
+  box-shadow: 0 10px 28px rgba(22, 43, 58, 0.28);
+}
+.ask-launcher:hover { background: var(--color-teal); }
+.ask-launcher:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 3px; }
+
 .ask-panel {
-  margin-top: 1.5rem;
+  width: min(22rem, calc(100vw - 2.5rem));
+  max-height: min(28rem, calc(100vh - 8rem));
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--color-border);
   border-radius: 1.15rem;
   background: var(--color-surface);
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 12px 32px rgba(22, 43, 58, 0.06);
+  padding: 1rem 1.1rem;
+  box-shadow: 0 20px 48px rgba(22, 43, 58, 0.22);
 }
+.ask-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.ask-panel-subhead {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}
+.ask-panel-close {
+  border: none;
+  background: none;
+  color: var(--color-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+}
+.ask-panel-close:hover { color: var(--color-danger); }
+.ask-panel-close:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 2px; }
+
+.ask-empty {
+  margin-top: 0.7rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.ask-thread {
+  margin-top: 0.7rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding-right: 0.2rem;
+}
+.ask-exchange { display: flex; flex-direction: column; gap: 0.35rem; }
+.ask-question {
+  align-self: flex-end;
+  max-width: 85%;
+  border-radius: 0.8rem 0.8rem 0.15rem 0.8rem;
+  background: var(--color-navy);
+  padding: 0.55rem 0.8rem;
+  color: white;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.ask-answer {
+  align-self: flex-start;
+  max-width: 90%;
+  border-radius: 0.8rem 0.8rem 0.8rem 0.15rem;
+  background: var(--color-slate-soft);
+  padding: 0.65rem 0.85rem;
+  color: var(--color-ink);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.ask-error {
+  margin-top: 0.7rem;
+  border-radius: 0.6rem;
+  background: var(--color-danger-soft);
+  padding: 0.6rem 0.75rem;
+  color: var(--color-danger);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .ask-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.9rem;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
 }
 .ask-form input {
   min-width: 0;
@@ -620,9 +715,9 @@ main section.bg-surface,
   border: 1px solid var(--color-border);
   border-radius: 0.75rem;
   background: var(--color-paper);
-  padding: 0.7rem 0.9rem;
+  padding: 0.6rem 0.8rem;
   color: var(--color-ink);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 .ask-form input:focus-visible {
   outline: 2px solid var(--color-teal);
@@ -632,27 +727,19 @@ main section.bg-surface,
   border: none;
   border-radius: 999px;
   background: var(--color-navy);
-  padding: 0.7rem 1.2rem;
+  padding: 0.6rem 1rem;
   color: white;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  box-shadow: 0 8px 20px rgba(22, 43, 58, 0.16);
 }
 .ask-form button:hover { background: var(--color-teal); }
 .ask-form button:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 3px; }
 .ask-form button:disabled { cursor: wait; opacity: 0.65; }
-.ask-answer {
-  margin-top: 1rem;
-  border-radius: 0.9rem;
-  background: var(--color-slate-soft);
-  padding: 0.9rem 1.1rem;
-  color: var(--color-ink);
-  font-size: 0.85rem;
-  line-height: 1.55;
-}
 
-@media (max-width: 639px) {
-  .ask-form { flex-direction: column; align-items: stretch; }
+@media (max-width: 480px) {
+  .ask-widget { left: 0.75rem; bottom: 0.75rem; right: 0.75rem; align-items: stretch; }
+  .ask-panel { width: 100%; }
+  .ask-launcher { align-self: flex-start; }
 }
 
 .stakes-section {
