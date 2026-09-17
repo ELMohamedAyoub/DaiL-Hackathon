@@ -32,6 +32,11 @@ type Report = {
     disposition: string;
     reason: string;
   }[];
+  partner_questions: {
+    id: string;
+    question: string;
+    source_evidence_id: string;
+  }[];
   reviewer_notes: { id: string; text: string }[];
   data_status: string;
   approval?: { reviewer_name: string; simulated: true; effect: string };
@@ -207,6 +212,30 @@ export default function C08Page() {
                     <p className="mt-2 max-w-3xl text-sm leading-6">{item.reason}</p>
                     <EvidenceReveal id={item.evidence_id} text={item.source_text} />
                   </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="py-8" aria-labelledby="partner-questions-heading">
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 id="partner-questions-heading" className="font-display text-3xl">Questions for the partner</h2>
+                  <p className="mt-1 text-sm text-muted">Follow-up requests tied to incomplete or excluded evidence.</p>
+                </div>
+                <span className="tag">generated from initial.json</span>
+              </div>
+              <div className="grid gap-4">
+                {report.partner_questions.map((item) => (
+                  <article key={item.id} className="claim-card">
+                    <div className="claim-card-topline">
+                      <span>{item.id}</span>
+                      <span className="font-mono">{item.source_evidence_id}</span>
+                    </div>
+                    <p className="mt-4 text-sm font-semibold leading-6">{item.question}</p>
+                    <dl className="claim-meta">
+                      <div><dt>Source</dt><dd>{item.source_evidence_id}</dd></div>
+                    </dl>
+                  </article>
                 ))}
               </div>
             </section>

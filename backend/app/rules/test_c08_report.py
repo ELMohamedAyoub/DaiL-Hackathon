@@ -30,7 +30,7 @@ def test_completion_is_explicitly_unstated_when_assessment_is_missing():
     report = build_report("PRG-SYN", load_source_data())
 
     assert report["completion_claim"]["value"] == "not stated"
-    assert report["completion_claim"]["statement"] == "not stated — no assessment submitted"
+    assert report["completion_claim"]["statement"] == "not stated, no assessment submitted"
     assert report["completion_claim"]["source_evidence_id"] == "ASSESS-A"
 
 
@@ -56,3 +56,16 @@ def test_claim_values_stay_consistent_with_their_source_text():
 
     assert str(claims["attendance"]["value"]) in evidence["SHEET-A"]
     assert str(claims["planned-capacity"]["value"]) in evidence["PLAN-A"]
+
+
+def test_partner_questions_reference_only_source_evidence():
+    data = load_source_data()
+    source_evidence_ids = {item["id"] for item in data["evidence"]}
+    report = build_report("PRG-SYN", data)
+    question_evidence_ids = {
+        question["source_evidence_id"] for question in report["partner_questions"]
+    }
+
+    assert report["partner_questions"]
+    assert question_evidence_ids == {"ASSESS-A", "VOICE-A"}
+    assert question_evidence_ids <= source_evidence_ids
