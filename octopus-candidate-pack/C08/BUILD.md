@@ -25,6 +25,7 @@ If the API runs elsewhere, start the frontend with `NEXT_PUBLIC_API_URL=http://h
 - Implemented: a pure deterministic report builder reads the unchanged C08 `initial.json` and separates attendance, planned capacity, missing completion evidence, and the excluded ambiguous transcript.
 - Implemented: `GET /programmes/PRG-SYN/report` returns the report and `POST /programmes/PRG-SYN/report/approve` changes only its status and simulated approval metadata.
 - Implemented: the UI reveals raw source text for every displayed claim and clearly labels VOICE-A as excluded from numeric citations.
+- Implemented: the report builder also returns partner_questions, a list of template-derived questions to ask the evidence partner (e.g. 'Please submit the completion assessment for Exercise week 1.'), derived only from existing flagged_evidence and completion_claim data, with no LLM involved, fully deterministic and tested.
 - Simulated: all exercise data, programme, named reviewer “Maya El Idrissi,” and human approval action.
 - Not implemented: authentication, durable approval history, source ingestion, transcript verification, assessment collection, or publication workflow.
 
