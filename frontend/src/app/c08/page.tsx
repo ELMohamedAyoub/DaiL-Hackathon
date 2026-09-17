@@ -119,7 +119,7 @@ export default function C08Page() {
               Every claim keeps its receipt.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
-              Attendance, planned capacity, and missing completion evidence remain separate. Approval changes visibility status only—not the generated claims.
+              Attendance, planned capacity, and missing completion evidence remain separate. Approval changes visibility status only, not the generated claims.
             </p>
           </div>
           {report && (
@@ -233,11 +233,13 @@ export default function C08Page() {
               )}
             </section>
 
-            <aside className="mt-5 border-l-2 border-navy bg-slate-soft px-4 py-3 text-sm leading-6">
-              <span className="mr-2 font-mono text-xs font-bold">{report.reviewer_notes[0].id}</span>
-              <span className="tag mr-2">locked reviewer note</span>
-              {report.reviewer_notes[0].text}
-            </aside>
+            {report.reviewer_notes[0] && (
+              <aside className="mt-5 border-l-2 border-navy bg-slate-soft px-4 py-3 text-sm leading-6">
+                <span className="mr-2 font-mono text-xs font-bold">{report.reviewer_notes[0].id}</span>
+                <span className="tag mr-2">locked reviewer note</span>
+                {report.reviewer_notes[0].text}
+              </aside>
+            )}
           </div>
         )}
       </div>
