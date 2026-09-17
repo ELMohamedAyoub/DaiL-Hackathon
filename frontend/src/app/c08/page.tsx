@@ -78,17 +78,23 @@ function EvidenceReveal({
   );
 }
 
-function AskAboutReport({ programmeId }: { programmeId: string }) {
+const SUGGESTED_QUESTIONS = [
+  "How many people attended?",
+  "Did the programme succeed overall?",
+  "What does the voice note tell us?",
+  "Was the completion assessment submitted?",
+];
+
+function AskAboutReport({ programmeId, reportReady }: { programmeId: string; reportReady: boolean }) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [exchanges, setExchanges] = useState<{ question: string; answer: string }[]>([]);
   const [askError, setAskError] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
 
-  async function ask(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = question.trim();
-    if (!trimmed) return;
+  async function askText(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || !reportReady) return;
 
     setAsking(true);
     setAskError(null);
@@ -107,6 +113,11 @@ function AskAboutReport({ programmeId }: { programmeId: string }) {
     } finally {
       setAsking(false);
     }
+  }
+
+  function ask(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void askText(question);
   }
 
   return (
@@ -128,11 +139,33 @@ function AskAboutReport({ programmeId }: { programmeId: string }) {
             </button>
           </div>
 
-          {exchanges.length === 0 && (
+          {!reportReady && (
             <p className="ask-empty">
-              Grounded in the claim ledger, nothing else. It will say so, and name the
-              missing record, if the report doesn&rsquo;t contain the answer.
+              Pick a case and trigger the simulated submission first. This widget can only
+              answer from a report that has actually been generated.
             </p>
+          )}
+
+          {reportReady && exchanges.length === 0 && (
+            <>
+              <p className="ask-empty">
+                Grounded in the claim ledger, nothing else. It will say so, and name the
+                missing record, if the report doesn&rsquo;t contain the answer.
+              </p>
+              <div className="ask-suggestions">
+                {SUGGESTED_QUESTIONS.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => void askText(suggestion)}
+                    disabled={asking}
+                    className="ask-suggestion"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
 
           {exchanges.length > 0 && (
@@ -157,11 +190,11 @@ function AskAboutReport({ programmeId }: { programmeId: string }) {
               type="text"
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder="e.g. How many people completed the programme?"
-              disabled={asking}
+              placeholder={reportReady ? "e.g. How many people completed the programme?" : "Trigger a case first"}
+              disabled={asking || !reportReady}
               aria-label="Question about this report"
             />
-            <button type="submit" disabled={asking || !question.trim()}>
+            <button type="submit" disabled={asking || !reportReady || !question.trim()}>
               {asking ? "Asking…" : "Ask"}
             </button>
           </form>
@@ -625,7 +658,6 @@ export default function C08Page() {
               <a href="#excluded">Narrative context</a>
               <a href="#questions">Questions</a>
               {report.history.length > 0 && <a href="#history">History</a>}
-              <a href="#ask">Ask a question</a>
               {programmes.length > 1 && (
                 <button
                   type="button"
@@ -816,10 +848,6 @@ export default function C08Page() {
               </aside>
             )}
 
-            <div id="ask">
-              <AskAboutReport programmeId={programmeId} />
-            </div>
-
             <section className="pitch-close" aria-label="Summary">
               <p>
                 Every number above traced to one source record. Nothing was inferred.
@@ -831,6 +859,7 @@ export default function C08Page() {
           </div>
         )}
       </div>
+      <AskAboutReport key={programmeId} programmeId={programmeId} reportReady={stage === "processed"} />
     </main>
   );
 }
