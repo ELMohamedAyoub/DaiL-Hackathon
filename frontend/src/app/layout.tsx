@@ -13,8 +13,11 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "C07 Evidence Desk",
+  title: "Ledger — Review-Readiness Desk",
   description: "Synthetic review-readiness exercise prototype",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

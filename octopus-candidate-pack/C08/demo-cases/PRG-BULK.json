@@ -1,0 +1,108 @@
+{
+  "case_id": "C08-DEMO",
+  "data_status": "DEMO-ONLY SIMULATED DATA; created for this prototype, not part of the official exercise pack",
+  "clock": "Exercise-local time only; no real event date implied",
+  "programme": {
+    "id": "PRG-BULK",
+    "name": "Demo case: a full programme's worth of evidence, not one week",
+    "reporting_period": "Programme year 1 (12 weeks)"
+  },
+  "evidence": [
+    {
+      "id": "PLAN-BULK",
+      "type": "plan",
+      "text": "Plan capacity: 24 participants. This is a target, not attendance."
+    },
+    {
+      "id": "SHEET-BULK",
+      "type": "attendance",
+      "text": "21 unique participants attended at least one session."
+    },
+    {
+      "id": "ASSESS-BULK",
+      "type": "assessment",
+      "text": "No completion assessment has been submitted."
+    },
+    {
+      "id": "VOICE-BULK-01",
+      "type": "voice-note-transcript",
+      "text": "Week 1 kickoff went fine, most of the planned group showed up."
+    },
+    {
+      "id": "VOICE-BULK-02",
+      "type": "voice-note-transcript",
+      "text": "Week 2 coordinator note: two participants dropped out, replaced by walk-ins."
+    },
+    {
+      "id": "VOICE-BULK-03",
+      "type": "voice-note-transcript",
+      "text": "Week 4 update. I think we trained close to twenty-four people by now, but I need to check the sheet."
+    },
+    {
+      "id": "FIELD-BULK-01",
+      "type": "field-note",
+      "text": "Week 3 field visit: session ran late, some participants left before the sign-in sheet was passed around."
+    },
+    {
+      "id": "FIELD-BULK-02",
+      "type": "field-note",
+      "text": "Week 6 field visit: venue changed on short notice, attendance sheet from that week may be incomplete."
+    },
+    {
+      "id": "FIELD-BULK-03",
+      "type": "field-note",
+      "text": "Week 9 field visit: coordinator reported strong engagement, no concerns raised."
+    },
+    {
+      "id": "SMS-BULK-01",
+      "type": "sms-thread",
+      "text": "Coordinator via SMS, week 5: 'sheet is a bit messy this week, will resend clean copy tomorrow.'"
+    },
+    {
+      "id": "SMS-BULK-02",
+      "type": "sms-thread",
+      "text": "Coordinator via SMS, week 7: 'reminder sent to all participants for next session, expecting good turnout.'"
+    },
+    {
+      "id": "PHOTO-BULK-01",
+      "type": "photo-log",
+      "text": "Week 2 session photo log: room shows approximately 20 seated participants, exact count not verifiable from image metadata alone."
+    },
+    {
+      "id": "PHOTO-BULK-02",
+      "type": "photo-log",
+      "text": "Week 8 session photo log: outdoor session, headcount not clearly visible in available images."
+    },
+    {
+      "id": "EXPENSE-BULK-01",
+      "type": "expense-record",
+      "text": "Week 1-4 materials budget: 480 USD spent against a planned 500 USD allocation."
+    },
+    {
+      "id": "EXPENSE-BULK-02",
+      "type": "expense-record",
+      "text": "Week 5-8 venue costs: 310 USD spent, 40 USD over the planned allocation due to the week 6 venue change."
+    },
+    {
+      "id": "MONITOR-BULK-01",
+      "type": "third-party-monitor-report",
+      "text": "Independent monitor visit, week 6: session quality rated satisfactory, facilitator preparation noted as strong."
+    },
+    {
+      "id": "COORD-NOTE-BULK-01",
+      "type": "coordinator-note",
+      "text": "General note from coordinator at week 10: overall pleased with programme progress, planning to request completion assessment window soon."
+    }
+  ],
+  "reviewer_notes": [
+    {
+      "id": "NOTE-BULK",
+      "text": "This demo case exercises the report builder against a full programme's evidence volume, not a single week. Only the official attendance and plan records carry a numeric claim; every other record is narrative context, exactly as the type-driven exclusion rule requires regardless of volume. This is a demo case, not the official exercise record."
+    }
+  ],
+  "rules": [
+    "Every numeric claim states unit, period and evidence record.",
+    "A draft report stays draft until a reviewer approves it.",
+    "No inference about outcomes from participation alone."
+  ]
+}
