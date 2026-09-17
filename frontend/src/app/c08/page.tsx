@@ -147,7 +147,7 @@ export default function C08Page() {
 
   return (
     <main className="min-h-screen bg-paper text-ink">
-      <header className="border-b border-ink bg-navy text-white">
+      <header className="no-print border-b border-ink bg-navy text-white">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-5 py-4 sm:px-8">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center border border-white/40 font-display text-xl">C08</span>
@@ -283,9 +283,18 @@ export default function C08Page() {
                 <p className="mt-2 font-mono text-xs font-bold text-muted">{report.programme_id}</p>
                 <h2 className="mt-1 font-display text-3xl sm:text-4xl">{report.programme_name}</h2>
               </div>
-              <div className="report-period">
-                <span>Reporting period</span>
-                <strong>{report.reporting_period}</strong>
+              <div className="flex flex-col items-start gap-3 sm:items-end">
+                <div className="report-period">
+                  <span>Reporting period</span>
+                  <strong>{report.reporting_period}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="no-print export-button"
+                >
+                  Export report (print / save as PDF)
+                </button>
               </div>
             </section>
 
@@ -391,7 +400,7 @@ export default function C08Page() {
                   Approved <span>simulated · status only</span>
                 </div>
               ) : (
-                <div className="review-actions">
+                <div className="review-actions no-print">
                   <div className="review-buttons">
                     <button type="button" onClick={approve} disabled={working} className="approval-button">
                       {working ? "Recording action…" : "Approve report (simulation)"}

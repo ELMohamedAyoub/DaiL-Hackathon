@@ -217,3 +217,24 @@ button {
 @media (min-width: 900px) {
   .claim-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+.export-button {
+  border: 1px solid var(--color-navy);
+  background: var(--color-surface);
+  padding: 0.6rem 0.9rem;
+  color: var(--color-navy);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.export-button:hover { background: var(--color-navy); color: white; }
+.export-button:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 3px; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  main { min-height: 0; }
+  .evidence-source[open] summary,
+  .evidence-source summary { display: none; }
+  .evidence-source blockquote { display: block !important; margin-top: 0.4rem; }
+  .claim-card, .report-masthead, .flagged-band, .review-strip { border-color: #999; }
+}
