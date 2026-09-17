@@ -18,6 +18,7 @@ SOURCE_DATA = (
     / "initial.json"
 )
 _approvals: dict[str, str] = {}
+_sendbacks: dict[str, dict[str, str]] = {}
 
 
 class ApprovalRequest(BaseModel):
@@ -29,6 +30,19 @@ class ApprovalRequest(BaseModel):
     def reviewer_name_must_be_named(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("reviewer_name must contain a name")
+        return value.strip()
+
+
+class SendBackRequest(BaseModel):
+    reviewer_name: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    simulated: Literal[True]
+
+    @field_validator("reviewer_name", "reason")
+    @classmethod
+    def fields_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("field must contain non-whitespace characters")
         return value.strip()
 
 
@@ -47,6 +61,13 @@ def current_report(programme_id: str) -> dict[str, Any]:
             "reviewer_name": reviewer_name,
             "simulated": True,
             "effect": "status-only; generated claims unchanged",
+        }
+    elif send_back := _sendbacks.get(programme_id):
+        report["status"] = "sent-back"
+        report["send_back"] = {
+            "reviewer_name": send_back["reviewer_name"],
+            "reason": send_back["reason"],
+            "simulated": True,
         }
     return report
 
@@ -69,4 +90,22 @@ async def approve_report(
         raise HTTPException(status_code=404, detail="Programme not found") from error
 
     _approvals[programme_id] = approval.reviewer_name
+    _sendbacks.pop(programme_id, None)
+    return current_report(programme_id)
+
+
+@router.post("/programmes/{programme_id}/report/send-back")
+async def send_back_report(
+    programme_id: str, send_back: SendBackRequest
+) -> dict[str, Any]:
+    try:
+        build_report(programme_id, load_source_data())
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Programme not found") from error
+
+    _sendbacks[programme_id] = {
+        "reviewer_name": send_back.reviewer_name,
+        "reason": send_back.reason,
+    }
+    _approvals.pop(programme_id, None)
     return current_report(programme_id)

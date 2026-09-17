@@ -16,7 +16,7 @@ type Report = {
   programme_id: string;
   programme_name: string;
   reporting_period: string;
-  status: "draft" | "approved";
+  status: "draft" | "sent-back" | "approved";
   numeric_claims: NumericClaim[];
   completion_claim: {
     value: "not stated";
@@ -40,6 +40,7 @@ type Report = {
   reviewer_notes: { id: string; text: string }[];
   data_status: string;
   approval?: { reviewer_name: string; simulated: true; effect: string };
+  send_back?: { reviewer_name: string; reason: string; simulated: true };
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8461";
@@ -62,6 +63,8 @@ export default function C08Page() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const [showSendBack, setShowSendBack] = useState(false);
+  const [sendBackReason, setSendBackReason] = useState("");
 
   useEffect(() => {
     fetch(`${API_URL}/programmes/${PROGRAMME_ID}/report`)
@@ -92,8 +95,41 @@ export default function C08Page() {
       );
       if (!response.ok) throw new Error();
       setReport((await response.json()) as Report);
+      setShowSendBack(false);
+      setSendBackReason("");
     } catch {
       setError("Simulated approval failed. Confirm the API is running, then try again.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function sendBack(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const reason = sendBackReason.trim();
+    if (!reason) return;
+
+    setWorking(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `${API_URL}/programmes/${PROGRAMME_ID}/report/send-back`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reviewer_name: REVIEWER_NAME,
+            reason,
+            simulated: true,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error();
+      setReport((await response.json()) as Report);
+      setShowSendBack(false);
+      setSendBackReason("");
+    } catch {
+      setError("Send-back failed. Confirm the API is running, then try again.");
     } finally {
       setWorking(false);
     }
@@ -128,10 +164,24 @@ export default function C08Page() {
             </p>
           </div>
           {report && (
-            <div className={`state-stamp report-status state-report-${report.status}`}>
-              <span>Report status</span>
-              <strong>{report.status}</strong>
-              <small>{report.status === "draft" ? "Awaiting named reviewer" : "Simulated human approval"}</small>
+            <div className="report-status-wrap">
+              <div className={`state-stamp report-status state-report-${report.status}`}>
+                <span>Report status</span>
+                <strong>{report.status}</strong>
+                <small>
+                  {report.status === "draft"
+                    ? "Awaiting named reviewer"
+                    : report.status === "sent-back"
+                      ? "More evidence requested"
+                      : "Simulated human approval"}
+                </small>
+              </div>
+              {report.status === "sent-back" && report.send_back && (
+                <p className="send-back-reason">
+                  <strong>{report.send_back.reviewer_name}</strong>
+                  <span>{report.send_back.reason}</span>
+                </p>
+              )}
             </div>
           )}
         </section>
@@ -256,9 +306,41 @@ export default function C08Page() {
                   Approved <span>simulated · status only</span>
                 </div>
               ) : (
-                <button type="button" onClick={approve} disabled={working} className="approval-button">
-                  {working ? "Recording approval…" : "Approve report (simulation)"}
-                </button>
+                <div className="review-actions">
+                  <div className="review-buttons">
+                    <button type="button" onClick={approve} disabled={working} className="approval-button">
+                      {working ? "Recording action…" : "Approve report (simulation)"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowSendBack((visible) => !visible)}
+                      disabled={working}
+                      className="send-back-button"
+                      aria-expanded={showSendBack}
+                      aria-controls="send-back-form"
+                    >
+                      Send back for more evidence
+                    </button>
+                  </div>
+                  {showSendBack && (
+                    <form id="send-back-form" onSubmit={sendBack} className="send-back-form">
+                      <label htmlFor="send-back-reason">Reason</label>
+                      <div>
+                        <input
+                          id="send-back-reason"
+                          type="text"
+                          value={sendBackReason}
+                          onChange={(event) => setSendBackReason(event.target.value)}
+                          required
+                          disabled={working}
+                        />
+                        <button type="submit" disabled={working || !sendBackReason.trim()}>
+                          {working ? "Recording action…" : "Confirm send-back"}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
               )}
             </section>
 

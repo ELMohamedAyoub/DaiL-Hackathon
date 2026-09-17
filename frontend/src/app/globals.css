@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Light mode only, by design (no dark mode) — per DESIGN.md.
+ * Light mode only, by design (no dark mode), per DESIGN.md.
  * --color-accent is a placeholder: retint once the brief defines the actual
  * subject matter, per DESIGN.md's "fit the client's subject, not a generic
  * SaaS color" rule. Everything else (paper/ink/surface/border/muted) is a
@@ -129,7 +129,12 @@ button {
 }
 
 .state-report-draft { background: var(--color-amber-soft); color: var(--color-amber-dark); }
+.state-report-sent-back { background: var(--color-danger-soft); color: var(--color-danger); }
 .state-report-approved { background: var(--color-teal-soft); color: var(--color-teal); }
+.report-status-wrap { max-width: 300px; }
+.send-back-reason { border-left: 2px solid var(--color-danger); background: var(--color-danger-soft); padding: 0.7rem 0.8rem; color: var(--color-danger); font-size: 0.75rem; line-height: 1.45; }
+.send-back-reason strong, .send-back-reason span { display: block; }
+.send-back-reason span { margin-top: 0.2rem; color: var(--color-ink); }
 
 .report-masthead {
   display: grid;
@@ -180,15 +185,33 @@ button {
 .flagged-band .evidence-source summary { color: var(--color-danger); }
 
 .review-strip { display: grid; gap: 1.5rem; margin-top: 2rem; border: 1px solid var(--color-border); background: var(--color-surface); padding: 1.5rem; }
+.review-actions { display: grid; gap: 0.9rem; }
+.review-buttons { display: flex; flex-wrap: wrap; gap: 0.65rem; justify-content: flex-end; }
 .approval-button { align-self: center; background: var(--color-navy); padding: 0.85rem 1.1rem; color: white; font-size: 0.8rem; font-weight: 800; }
 .approval-button:hover { background: var(--color-teal); }
 .approval-button:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 3px; }
 .approval-button:disabled { cursor: wait; opacity: 0.65; }
+.send-back-button { border: 1px solid var(--color-danger); background: var(--color-surface); padding: 0.8rem 1rem; color: var(--color-danger); font-size: 0.8rem; font-weight: 800; }
+.send-back-button:hover { background: var(--color-danger-soft); }
+.send-back-button:focus-visible { outline: 2px solid var(--color-danger); outline-offset: 3px; }
+.send-back-button:disabled { cursor: wait; opacity: 0.65; }
+.send-back-form { border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
+.send-back-form label { display: block; margin-bottom: 0.35rem; color: var(--color-ink); font-size: 0.72rem; font-weight: 800; }
+.send-back-form div { display: flex; gap: 0.5rem; }
+.send-back-form input { min-width: 0; flex: 1; border: 1px solid var(--color-border); background: var(--color-surface); padding: 0.7rem 0.8rem; color: var(--color-ink); font-size: 0.8rem; }
+.send-back-form input:focus-visible { outline: 2px solid var(--color-danger); outline-offset: 2px; }
+.send-back-form button { border: 1px solid var(--color-danger); background: var(--color-danger); padding: 0.7rem 0.9rem; color: var(--color-surface); font-size: 0.75rem; font-weight: 800; }
+.send-back-form button:focus-visible { outline: 2px solid var(--color-danger); outline-offset: 3px; }
+.send-back-form button:disabled { cursor: wait; opacity: 0.65; }
 .approval-confirmation { align-self: center; border: 1px solid var(--color-teal); background: var(--color-teal-soft); padding: 0.8rem 1rem; color: var(--color-teal); font-weight: 800; }
 .approval-confirmation span { display: block; margin-top: 0.2rem; font-size: 0.6rem; text-transform: uppercase; }
 
 @media (min-width: 640px) {
   .report-masthead, .review-strip { grid-template-columns: 1fr auto; align-items: center; padding: 1.75rem; }
+}
+
+@media (max-width: 639px) {
+  .review-buttons, .send-back-form div { align-items: stretch; flex-direction: column; }
 }
 
 @media (min-width: 900px) {

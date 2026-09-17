@@ -1,6 +1,15 @@
+import asyncio
 import json
 from pathlib import Path
 
+from app.routers.c08 import (
+    ApprovalRequest,
+    SendBackRequest,
+    _approvals,
+    _sendbacks,
+    approve_report,
+    send_back_report,
+)
 from app.rules.c08_report import build_report
 
 
@@ -69,3 +78,43 @@ def test_partner_questions_reference_only_source_evidence():
     assert report["partner_questions"]
     assert question_evidence_ids == {"ASSESS-A", "VOICE-A"}
     assert question_evidence_ids <= source_evidence_ids
+
+
+def test_report_can_be_sent_back_with_a_reason_then_reapproved():
+    programme_id = "PRG-SYN"
+    _approvals.pop(programme_id, None)
+    _sendbacks.pop(programme_id, None)
+
+    try:
+        sent_back = asyncio.run(
+            send_back_report(
+                programme_id,
+                SendBackRequest(
+                    reviewer_name="Maya El Idrissi",
+                    reason="Please attach the completion assessment.",
+                    simulated=True,
+                ),
+            )
+        )
+
+        assert sent_back["status"] == "sent-back"
+        assert sent_back["send_back"] == {
+            "reviewer_name": "Maya El Idrissi",
+            "reason": "Please attach the completion assessment.",
+            "simulated": True,
+        }
+        assert "approval" not in sent_back
+
+        approved = asyncio.run(
+            approve_report(
+                programme_id,
+                ApprovalRequest(reviewer_name="Maya El Idrissi", simulated=True),
+            )
+        )
+
+        assert approved["status"] == "approved"
+        assert approved["approval"]["reviewer_name"] == "Maya El Idrissi"
+        assert "send_back" not in approved
+    finally:
+        _approvals.pop(programme_id, None)
+        _sendbacks.pop(programme_id, None)
