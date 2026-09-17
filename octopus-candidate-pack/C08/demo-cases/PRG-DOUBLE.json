@@ -1,0 +1,48 @@
+{
+  "case_id": "C08-DEMO",
+  "data_status": "DEMO-ONLY SIMULATED DATA; created for this prototype, not part of the official exercise pack",
+  "clock": "Exercise-local time only; no real event date implied",
+  "programme": {
+    "id": "PRG-DOUBLE",
+    "name": "Demo case: two ambiguous narrative records, not just one",
+    "reporting_period": "Demo period"
+  },
+  "evidence": [
+    {
+      "id": "PLAN-D",
+      "type": "plan",
+      "text": "Plan capacity: 18 participants. This is a target, not attendance."
+    },
+    {
+      "id": "SHEET-D",
+      "type": "attendance",
+      "text": "16 unique participants attended at least one session."
+    },
+    {
+      "id": "VOICE-D",
+      "type": "voice-note-transcript",
+      "text": "Turnout felt strong this cycle, maybe close to full capacity."
+    },
+    {
+      "id": "FIELD-D",
+      "type": "field-note",
+      "text": "Coordinator mentioned a few walk-ins who may not be on the sheet."
+    },
+    {
+      "id": "ASSESS-D",
+      "type": "assessment",
+      "text": "No completion assessment has been submitted."
+    }
+  ],
+  "reviewer_notes": [
+    {
+      "id": "NOTE-D",
+      "text": "Two separate narrative records exist this period. Neither should be cited as a number. This is a demo case, not the official exercise record."
+    }
+  ],
+  "rules": [
+    "Every numeric claim states unit, period and evidence record.",
+    "A draft report stays draft until a reviewer approves it.",
+    "No inference about outcomes from participation alone."
+  ]
+}

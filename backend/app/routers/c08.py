@@ -12,12 +12,35 @@ from app.rules.c08_report import build_report
 
 
 router = APIRouter()
-SOURCE_DATA = (
-    Path(__file__).resolve().parents[3]
-    / "octopus-candidate-pack"
-    / "C08"
-    / "initial.json"
-)
+C08_DIR = Path(__file__).resolve().parents[3] / "octopus-candidate-pack" / "C08"
+
+# Programme id -> source file. PRG-SYN is the official exercise record.
+# Everything else is demo-only simulated data, kept in its own folder per
+# the exercise's disclosure rule, never merged into the official file.
+_PROGRAMME_SOURCES: dict[str, Path] = {
+    "PRG-SYN": C08_DIR / "initial.json",
+    "PRG-NOASSESS": C08_DIR / "demo-cases" / "PRG-NOASSESS.json",
+    "PRG-DOUBLE": C08_DIR / "demo-cases" / "PRG-DOUBLE.json",
+}
+
+PROGRAMME_SUMMARIES = [
+    {
+        "id": "PRG-SYN",
+        "label": "Official case: plan vs attendance vs voice note vs missing assessment",
+        "official": True,
+    },
+    {
+        "id": "PRG-NOASSESS",
+        "label": "Demo case: no assessment record submitted at all",
+        "official": False,
+    },
+    {
+        "id": "PRG-DOUBLE",
+        "label": "Demo case: two separate ambiguous narrative records",
+        "official": False,
+    },
+]
+
 _approvals: dict[str, str] = {}
 _sendbacks: dict[str, dict[str, str]] = {}
 _history: dict[str, list[dict[str, str]]] = {}
@@ -61,14 +84,20 @@ class SendBackRequest(BaseModel):
         return value.strip()
 
 
-@lru_cache(maxsize=1)
-def load_source_data() -> dict[str, Any]:
-    """Load unchanged synthetic C08 data, the sole source of report facts."""
-    return json.loads(SOURCE_DATA.read_text(encoding="utf-8"))
+@lru_cache(maxsize=None)
+def load_source_data(programme_id: str) -> dict[str, Any]:
+    """Load unchanged synthetic C08 data for one programme, the sole source
+    of that programme's report facts."""
+    path = _PROGRAMME_SOURCES.get(programme_id)
+    if path is None:
+        raise KeyError(programme_id)
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def current_report(programme_id: str) -> dict[str, Any]:
-    report: dict[str, Any] = deepcopy(build_report(programme_id, load_source_data()))
+    report: dict[str, Any] = deepcopy(
+        build_report(programme_id, load_source_data(programme_id))
+    )
     reviewer_name = _approvals.get(programme_id)
     if reviewer_name:
         report["status"] = "approved"
@@ -88,6 +117,11 @@ def current_report(programme_id: str) -> dict[str, Any]:
     return report
 
 
+@router.get("/programmes")
+async def list_programmes() -> list[dict[str, Any]]:
+    return PROGRAMME_SUMMARIES
+
+
 @router.get("/programmes/{programme_id}/report")
 async def get_report(programme_id: str) -> dict[str, Any]:
     try:
@@ -101,7 +135,7 @@ async def approve_report(
     programme_id: str, approval: ApprovalRequest
 ) -> dict[str, Any]:
     try:
-        build_report(programme_id, load_source_data())
+        build_report(programme_id, load_source_data(programme_id))
     except KeyError as error:
         raise HTTPException(status_code=404, detail="Programme not found") from error
 
@@ -116,7 +150,7 @@ async def send_back_report(
     programme_id: str, send_back: SendBackRequest
 ) -> dict[str, Any]:
     try:
-        build_report(programme_id, load_source_data())
+        build_report(programme_id, load_source_data(programme_id))
     except KeyError as error:
         raise HTTPException(status_code=404, detail="Programme not found") from error
 

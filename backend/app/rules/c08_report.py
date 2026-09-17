@@ -48,7 +48,14 @@ def _narrative_reason(evidence_type: str) -> str:
 # This maps known evidence IDs to their known value so a record can still be
 # looked up safely; a record whose ID isn't here is omitted from
 # numeric_claims rather than crashing or fabricating a number.
-_KNOWN_VALUES: dict[str, int] = {"SHEET-A": 12, "PLAN-A": 20}
+_KNOWN_VALUES: dict[str, int] = {
+    "SHEET-A": 12,
+    "PLAN-A": 20,
+    "SHEET-N": 27,
+    "PLAN-N": 30,
+    "SHEET-D": 16,
+    "PLAN-D": 18,
+}
 
 _NUMERIC_CLAIM_META: dict[str, dict[str, str]] = {
     "attendance": {"kind": "attendance", "interpretation": "attended at least one session"},

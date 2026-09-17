@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type NumericClaim = {
   kind: "attendance" | "planned-capacity";
@@ -45,8 +45,9 @@ type Report = {
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8461";
-const PROGRAMME_ID = "PRG-SYN";
 const REVIEWER_NAME = "Maya El Idrissi";
+
+type ProgrammeSummary = { id: string; label: string; official: boolean };
 
 function EvidenceReveal({ id, text }: { id: string; text: string }) {
   return (
@@ -63,6 +64,8 @@ function EvidenceReveal({ id, text }: { id: string; text: string }) {
 type Stage = "idle" | "arrived" | "processed";
 
 export default function C08Page() {
+  const [programmes, setProgrammes] = useState<ProgrammeSummary[]>([]);
+  const [programmeId, setProgrammeId] = useState("PRG-SYN");
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
@@ -71,10 +74,26 @@ export default function C08Page() {
   const [sendBackReason, setSendBackReason] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
 
+  useEffect(() => {
+    fetch(`${API_URL}/programmes`)
+      .then((response) => (response.ok ? response.json() : []))
+      .then((data: ProgrammeSummary[]) => setProgrammes(data))
+      .catch(() => setProgrammes([]));
+  }, []);
+
+  function resetForNewProgramme(nextId: string) {
+    setProgrammeId(nextId);
+    setReport(null);
+    setStage("idle");
+    setShowSendBack(false);
+    setSendBackReason("");
+    setError(null);
+  }
+
   function simulateIncomingEvidence() {
     setLoadingEvidence(true);
     setError(null);
-    fetch(`${API_URL}/programmes/${PROGRAMME_ID}/report`)
+    fetch(`${API_URL}/programmes/${programmeId}/report`)
       .then((response) => {
         if (!response.ok) throw new Error();
         return response.json() as Promise<Report>;
@@ -94,7 +113,7 @@ export default function C08Page() {
     setError(null);
     try {
       const response = await fetch(
-        `${API_URL}/programmes/${PROGRAMME_ID}/report/approve`,
+        `${API_URL}/programmes/${programmeId}/report/approve`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -124,7 +143,7 @@ export default function C08Page() {
     setError(null);
     try {
       const response = await fetch(
-        `${API_URL}/programmes/${PROGRAMME_ID}/report/send-back`,
+        `${API_URL}/programmes/${programmeId}/report/send-back`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -221,12 +240,39 @@ export default function C08Page() {
 
         {stage === "idle" && !error && (
           <section className="mt-8 border border-border bg-surface px-5 py-8 sm:px-8">
+            {programmes.length > 1 && (
+              <div className="mb-6">
+                <p className="tag">choose a case</p>
+                <p className="mt-2 max-w-xl text-xs leading-5 text-muted">
+                  One official exercise record, plus demo-only cases built to exercise the
+                  same rules engine against scenarios the official record does not cover.
+                  Demo cases are clearly labeled and never alter the official file.
+                </p>
+                <div className="mt-3 grid gap-2">
+                  {programmes.map((programme) => (
+                    <button
+                      key={programme.id}
+                      type="button"
+                      onClick={() => resetForNewProgramme(programme.id)}
+                      className={`programme-option ${programme.id === programmeId ? "programme-option-active" : ""}`}
+                    >
+                      <span className="font-mono text-[0.65rem] font-bold">{programme.id}</span>
+                      <span>{programme.label}</span>
+                      <span className="tag">{programme.official ? "official record" : "demo only"}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p className="tag">data source</p>
             <p className="mt-2 font-mono text-xs text-muted">
-              octopus-candidate-pack/C08/initial.json
+              {programmes.find((p) => p.id === programmeId)?.official
+                ? "octopus-candidate-pack/C08/initial.json"
+                : `octopus-candidate-pack/C08/demo-cases/${programmeId}.json`}
             </p>
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted">
-              Nothing has been read yet. Trigger the simulated submission to load the four
+              Nothing has been read yet. Trigger the simulated submission to load the
               evidence records exactly as they exist in that file.
             </p>
             <button

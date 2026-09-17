@@ -1,0 +1,33 @@
+{
+  "case_id": "C08-DEMO",
+  "data_status": "DEMO-ONLY SIMULATED DATA; created for this prototype, not part of the official exercise pack",
+  "clock": "Exercise-local time only; no real event date implied",
+  "programme": {
+    "id": "PRG-NOASSESS",
+    "name": "Demo case: no assessment record submitted at all",
+    "reporting_period": "Demo period"
+  },
+  "evidence": [
+    {
+      "id": "PLAN-N",
+      "type": "plan",
+      "text": "Plan capacity: 30 participants. This is a target, not attendance."
+    },
+    {
+      "id": "SHEET-N",
+      "type": "attendance",
+      "text": "27 unique participants attended at least one session."
+    }
+  ],
+  "reviewer_notes": [
+    {
+      "id": "NOTE-N",
+      "text": "No completion assessment record exists for this programme yet. This is a demo case, not the official exercise record."
+    }
+  ],
+  "rules": [
+    "Every numeric claim states unit, period and evidence record.",
+    "A draft report stays draft until a reviewer approves it.",
+    "No inference about outcomes from participation alone."
+  ]
+}

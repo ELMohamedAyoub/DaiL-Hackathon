@@ -262,3 +262,19 @@ button {
 .history-headline { font-size: 0.85rem; font-weight: 700; }
 .history-detail { margin-top: 0.2rem; font-size: 0.8rem; color: var(--color-ink); }
 .history-timestamp { margin-top: 0.2rem; font-family: var(--font-sans); font-size: 0.65rem; color: var(--color-muted); }
+
+.programme-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  padding: 0.65rem 0.9rem;
+  text-align: left;
+  font-size: 0.8rem;
+}
+.programme-option:hover { border-color: var(--color-teal); }
+.programme-option:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 2px; }
+.programme-option-active { border-color: var(--color-navy); background: var(--color-surface); }
+.programme-option-active span:first-child { color: var(--color-navy); }
