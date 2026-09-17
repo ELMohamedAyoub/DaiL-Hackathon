@@ -39,7 +39,7 @@ def test_completion_is_explicitly_unstated_when_assessment_is_missing():
     report = build_report("PRG-SYN", load_source_data())
 
     assert report["completion_claim"]["value"] == "not stated"
-    assert report["completion_claim"]["statement"] == "not stated, no assessment submitted"
+    assert report["completion_claim"]["statement"] == "not stated, see source assessment record"
     assert report["completion_claim"]["source_evidence_id"] == "ASSESS-A"
 
 
@@ -118,6 +118,70 @@ def test_completion_claim_has_no_citation_when_no_assessment_record_exists():
     assert report["completion_claim"]["source_evidence_id"] == ""
     assert report["completion_claim"]["source_text"] == ""
     assert "no record of type assessment present" in report["completion_claim"]["statement"]
+
+
+def test_missing_attendance_and_plan_records_do_not_crash():
+    """Bug 1: numeric_claims used to do evidence['SHEET-A'] / evidence['PLAN-A']
+    directly. A data set missing those exact IDs must not crash -- it should
+    just omit the claim, never fabricate a value."""
+    data = load_source_data()
+    data["evidence"] = [item for item in data["evidence"] if item["type"] not in ("attendance", "plan")]
+
+    report = build_report("PRG-SYN", data)
+
+    claim_kinds = {claim["kind"] for claim in report["numeric_claims"]}
+    assert claim_kinds == set()
+
+
+def test_empty_evidence_list_does_not_crash():
+    """Bug 4: zero evidence records at all must produce an empty, well-formed
+    report, not a crash."""
+    data = load_source_data()
+    data["evidence"] = []
+
+    report = build_report("PRG-SYN", data)
+
+    assert report["numeric_claims"] == []
+    assert report["flagged_evidence"] == []
+    assert report["completion_claim"]["source_evidence_id"] == ""
+
+
+def test_completion_statement_does_not_assert_non_submission_for_positive_assessment():
+    """Bug 2: an assessment record that reports real completion data must not
+    be relabeled "no assessment submitted" -- that fabricates the opposite of
+    what the record says. The claim must stay content-agnostic; the actual
+    text is exposed via source_text for the reviewer to read."""
+    data = load_source_data()
+    for item in data["evidence"]:
+        if item["id"] == "ASSESS-A":
+            item["text"] = "9 of 12 participants completed the full programme."
+
+    report = build_report("PRG-SYN", data)
+
+    assert "no assessment submitted" not in report["completion_claim"]["statement"]
+    assert report["completion_claim"]["source_text"] == (
+        "9 of 12 participants completed the full programme."
+    )
+
+
+def test_duplicate_attendance_record_with_unknown_id_is_omitted_not_guessed():
+    """Bug 3 (documented current behavior, not fixed this round -- see
+    TODOS.md): a second attendance-type record under an ID with no known
+    value is safely omitted, never silently guessed or double-counted."""
+    data = load_source_data()
+    data["evidence"].append(
+        {
+            "id": "SHEET-B",
+            "type": "attendance",
+            "text": "15 unique participants attended at least one session.",
+        }
+    )
+
+    report = build_report("PRG-SYN", data)
+
+    attendance_claims = [c for c in report["numeric_claims"] if c["kind"] == "attendance"]
+    assert len(attendance_claims) == 1
+    assert attendance_claims[0]["source_evidence_id"] == "SHEET-A"
 
 
 def test_report_can_be_sent_back_with_a_reason_then_reapproved():

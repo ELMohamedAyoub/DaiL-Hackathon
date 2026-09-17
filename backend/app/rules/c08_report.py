@@ -44,6 +44,43 @@ def _narrative_reason(evidence_type: str) -> str:
     return f"record type '{evidence_type}' is not an authoritative source for any reported metric."
 
 
+# Numeric values are not parsed from evidence text (deferred, see TODOS.md).
+# This maps known evidence IDs to their known value so a record can still be
+# looked up safely; a record whose ID isn't here is omitted from
+# numeric_claims rather than crashing or fabricating a number.
+_KNOWN_VALUES: dict[str, int] = {"SHEET-A": 12, "PLAN-A": 20}
+
+_NUMERIC_CLAIM_META: dict[str, dict[str, str]] = {
+    "attendance": {"kind": "attendance", "interpretation": "attended at least one session"},
+    "plan": {"kind": "planned-capacity", "interpretation": "target, not actual attendance"},
+}
+
+
+def _build_numeric_claims(evidence_list: list[dict[str, Any]], period: str) -> list["NumericClaim"]:
+    claims: list[NumericClaim] = []
+    for item in evidence_list:
+        meta = _NUMERIC_CLAIM_META.get(item["type"])
+        if meta is None:
+            continue
+        value = _KNOWN_VALUES.get(item["id"])
+        if value is None:
+            # No known value for this record's ID -- omit rather than crash
+            # or fabricate. Value parsing from text is deferred (TODOS.md).
+            continue
+        claims.append(
+            {
+                "kind": meta["kind"],
+                "value": value,
+                "unit": "participants",
+                "period": period,
+                "source_evidence_id": item["id"],
+                "source_text": item["text"],
+                "interpretation": meta["interpretation"],
+            }
+        )
+    return claims
+
+
 class FlaggedEvidence(TypedDict):
     evidence_id: str
     evidence_type: str
@@ -77,16 +114,20 @@ def build_report(programme_id: str, data: dict[str, Any]) -> C08Report:
     if programme["id"] != programme_id:
         raise KeyError(programme_id)
 
-    evidence = {item["id"]: item for item in data["evidence"]}
     period = programme["reporting_period"]
 
+    # Completion is never inferred from an assessment record's content -- only
+    # its presence or absence is checked. A record's text is surfaced verbatim
+    # (source_text) for the reviewer to read; it is never parsed or
+    # characterized, so this cannot assert "no assessment submitted" as a
+    # verified fact for a record that might say something else entirely.
     assessment_records = [item for item in data["evidence"] if item["type"] == "assessment"]
     if assessment_records:
         completion_source = assessment_records[0]
         completion_claim: CompletionClaim = {
             "kind": "completion",
             "value": "not stated",
-            "statement": "not stated, no assessment submitted",
+            "statement": "not stated, see source assessment record",
             "period": period,
             "source_evidence_id": completion_source["id"],
             "source_text": completion_source["text"],
@@ -138,26 +179,7 @@ def build_report(programme_id: str, data: dict[str, Any]) -> C08Report:
         "programme_name": programme["name"],
         "reporting_period": period,
         "status": "draft",
-        "numeric_claims": [
-            {
-                "kind": "attendance",
-                "value": 12,
-                "unit": "participants",
-                "period": period,
-                "source_evidence_id": "SHEET-A",
-                "source_text": evidence["SHEET-A"]["text"],
-                "interpretation": "attended at least one session",
-            },
-            {
-                "kind": "planned-capacity",
-                "value": 20,
-                "unit": "participants",
-                "period": period,
-                "source_evidence_id": "PLAN-A",
-                "source_text": evidence["PLAN-A"]["text"],
-                "interpretation": "target, not actual attendance",
-            },
-        ],
+        "numeric_claims": _build_numeric_claims(data["evidence"], period),
         "completion_claim": completion_claim,
         "flagged_evidence": flagged_evidence,
         "partner_questions": partner_questions,

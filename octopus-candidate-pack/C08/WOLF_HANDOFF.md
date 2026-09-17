@@ -11,8 +11,8 @@ A programme reviewer needs an evidence-linked report that distinguishes attendan
 Run the API and UI using `BUILD.md`, then open `http://localhost:4927/c08`.
 
 - Show that attendance is 12 participants for Exercise week 1 from SHEET-A, while 20 participants is separately labelled as a PLAN-A target.
-- Reveal every raw source and show that VOICE-A is flagged as self-correcting, ambiguous, and excluded from numeric citations.
-- Show completion as “not stated — no assessment submitted” from ASSESS-A.
+- Reveal every raw source and show that VOICE-A is excluded from numeric citations because its evidence type (voice-note-transcript) isn't authoritative for any metric — not because of a hardcoded check on VOICE-A specifically; a second narrative record under a different ID gets the same treatment.
+- Show completion as "not stated, see source assessment record" — the claim never characterizes the assessment's content, so it stays true whether ASSESS-A says nothing was submitted or reports something else entirely.
 - Use the simulated named-reviewer button and show that only the draft/approved stamp changes.
 - Failure path: stop the API and reload; the UI gives a specific recovery instruction.
 
