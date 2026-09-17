@@ -206,8 +206,25 @@ function AskAboutReport({ programmeId, reportReady }: { programmeId: string; rep
         onClick={() => setOpen((visible) => !visible)}
         className="ask-launcher"
         aria-expanded={open}
+        aria-label={open ? "Close ask panel" : "Ask about this report"}
       >
-        {open ? "Close" : "Ask about this report"}
+        {open ? (
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <path
+              d="M4 5.5C4 4.67 4.67 4 5.5 4h13c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5H9l-4.2 3.36A.5.5 0 0 1 4 19V5.5Z"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            <circle cx="8.5" cy="10" r="1" fill="currentColor" />
+            <circle cx="12" cy="10" r="1" fill="currentColor" />
+            <circle cx="15.5" cy="10" r="1" fill="currentColor" />
+          </svg>
+        )}
       </button>
     </div>
   );
