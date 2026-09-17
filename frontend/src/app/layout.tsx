@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Space_Grotesk, Manrope } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const spaceGrotesk = Space_Grotesk({
   variable: "--font-display",
   subsets: ["latin"],
-  axes: ["opsz"],
 });
 
 const manrope = Manrope({
@@ -22,7 +21,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
