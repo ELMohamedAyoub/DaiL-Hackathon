@@ -10,21 +10,27 @@ A programme reviewer needs an evidence-linked report that distinguishes attendan
 
 Run the API and UI using `BUILD.md`, then open `http://localhost:4927/c08`.
 
+- Select `PRG-SYN`, the official record, and trigger the labeled simulated submission. The reviewer brief appears immediately; the raw arrivals, rule checks, comparison detail, and source ledger remain inspectable below it.
 - Show that attendance is 12 participants for Exercise week 1 from SHEET-A, while 20 participants is separately labelled as a PLAN-A target.
-- Reveal every raw source and show that VOICE-A is excluded from numeric citations because its evidence type (voice-note-transcript) isn't authoritative for any metric — not because of a hardcoded check on VOICE-A specifically; a second narrative record under a different ID gets the same treatment.
-- Show completion as "not stated, see source assessment record" — the claim never characterizes the assessment's content, so it stays true whether ASSESS-A says nothing was submitted or reports something else entirely.
-- Use the simulated named-reviewer button and show that only the draft/approved stamp changes.
+- Show the three-source cross-check: VOICE-A's reference to 20 matches PLAN-A's target and differs from SHEET-A's attendance of 12. It stays visible and triggers review, but remains non-authoritative and never becomes a numeric citation.
+- Show completion as "not stated, see source assessment record". The claim never characterizes the assessment's content, so it stays true whether ASSESS-A says nothing was submitted or reports something else entirely.
+- Show the deterministic partner questions tied to the assessment record and excluded narrative evidence.
+- Request evidence with a reason, then approve the wording. Show that the current reviewer state changes and both actions remain in the in-memory review-history timeline while the generated claims stay unchanged.
+- Use `Export report (print / save as PDF)` to open the browser print view.
+- Return to the case selector and point out `PRG-NOASSESS` and `PRG-DOUBLE`. Both are demo-only cases, stored separately to prove the same rules handle no assessment record and two ambiguous narrative records.
 - Failure path: stop the API and reload; the UI gives a specific recovery instruction.
 
 ## What is real
 
 | Component | Implemented or simulated | Evidence and limitation |
 | --- | --- | --- |
-| Input | Simulated | Unchanged synthetic `initial.json` is the sole source. |
+| Input | Simulated | Unchanged synthetic `initial.json` is the official source; two separate `demo-cases/` files exercise additional paths. |
 | Report rules | Implemented | Pure deterministic construction with explicit evidence IDs. |
 | Evidence inspection | Implemented | Exact supplied text is available from every claim card. |
-| Human approval | Simulated | Named reviewer action changes in-memory status only. |
-| Persistence and publication | Not implemented | Restarting the API clears approval; no report is externally published. |
+| Partner questions | Implemented | Template-derived questions use completion and excluded-evidence state; no LLM is involved. |
+| Human review | Simulated | Named reviewer approve/send-back actions change in-memory state only and append to visible history. |
+| Export | Implemented | The UI invokes browser print/save as PDF; no PDF service or publication occurs. |
+| Persistence and publication | Not implemented | Restarting the API clears reviewer state and history; no report is externally published. |
 
 ## Next client validation
 

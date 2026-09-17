@@ -16,4 +16,14 @@ A locked reviewer correction (NOTE-1) was also respected: preserve organisation 
 
 **Initial instinct:** Extract "the" attendance number.
 
-**Change:** After re-reading reviewer note NOTE-A (use "attended" for attendance; never report "completed" without the assessment), the design changed. The voice note is shown but explicitly excluded from numeric claims, flagged with reason. Completion is rendered as an explicit "not stated" state rather than a blank or a guess.
+**First change:** After re-reading reviewer note NOTE-A (use "attended" for attendance; never report "completed" without the assessment), the design changed. The voice note was shown but excluded from numeric claims. Completion became an explicit "not stated" state rather than a blank or a guess.
+
+**Client feedback:** The voice note should not feel ignored; all three sources should be cross-checked. The resulting report also felt difficult to understand because it exposed rules and report machinery before the decision.
+
+**Second change:** The prototype now compares the plan, attendance sheet, and narrative together. Narrative remains non-authoritative, but it can corroborate a value, expose a discrepancy, or remain unresolved. The result-first reviewer brief now leads with: “12 attended. 20 was the target. Completion is unknown,” followed by the one discrepancy, a recommended action, and safe draft wording. The detailed comparison, sources, rules, and questions remain below as the audit trail.
+
+**Third change:** A follow-up clarity review found that the extra “Process evidence” step made the demo feel like a system ceremony rather than a decision aid. The flow was reduced to one labeled simulation trigger that loads the sources and immediately presents the reviewer brief.
+
+**Fourth change:** The approval controls were still buried beneath the full audit trail. They now sit immediately below the reviewer brief with task-based labels—“Approve wording” and “Request evidence.” The request form asks what the partner must clarify and explains that the reason becomes part of review history. Detailed rules and sources remain available below for inspection.
+
+**Observable outcome:** In under two minutes, a reporting officer can identify the supported activity statement, see why an outcome cannot yet be claimed, and either approve the draft or send it back with a source-linked question.

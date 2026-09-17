@@ -1,9 +1,13 @@
-Here's the problem we kept running into, in both of these prototypes. The evidence a decision needs usually already exists somewhere. It just doesn't reliably turn into the right next action for the person who has to decide. So we built two small cases to test one idea: can we take messy evidence and route it to a human cleanly, without pretending to make the call ourselves.
+The result is: twelve people attended, twenty was the target, and completion is unknown. That is the cautious statement this evidence supports.
 
-This is C07. First, APP-1. It's a clean near-miss. Everything lines up except one item is missing, and the tool says exactly that. Now APP-2. Here the organization name doesn't match across sources. It's ambiguous. The tool flags it and stops. It does not auto-resolve it. That's the whole point. In both cases the tool never approves and never rejects. It only routes the case to a human reviewer with the reason attached.
+I will show how we reached it. I select the official case and trigger a simulated evidence submission. The plan targets twenty, the attendance sheet says twelve attended, the voice note mentions twenty but clarifies that twenty was planned, and the assessment record does not establish completion.
 
-Now C08. Here we have four sources that contradict each other. The plan says a target of twenty. Actual attendance is twelve. There's a voice note that corrects itself partway through. And the completion assessment is missing entirely. The report cites every single number back to the source it came from, and where something isn't there, it says "not stated." It doesn't guess. It doesn't fill the gap to look complete.
+The reviewer brief appears immediately. It separates supported attendance, target context, and an unestablished outcome. The voice note is not ignored: it is cross-checked against both numbers and shown as matching the plan rather than attendance. The interface proposes wording the officer can defend, while every conclusion remains linked to its source.
 
-I want to be explicit about what's real and what isn't. Real: the rules engine, the live API, and the user interface. Simulated: the application and evidence data, the reviewer identity, and the approval action itself. No real client data is anywhere in this.
+The decision stays human. Maya can approve the cautious wording or request evidence with a precise reason. That action changes status only, it never changes a claim, and it is added to the visible review history.
 
-One hypothesis is still unvalidated. Right now the evidence is static JSON. The open question is whether real document and evidence extraction can feed this same pipeline. That's what we'd test next.
+The uncertain path is completion: participation cannot become an outcome without assessment evidence. Two clearly labeled demo-only cases also show a missing assessment and multiple narrative records without altering the official exercise file.
+
+What works: deterministic comparison, source traceability, follow-up questions, reviewer actions, history, and print view. What is simulated: all evidence, the reviewer identity, and the actions themselves.
+
+The promise demonstrated is that mixed evidence can become a cautious, traceable draft without hiding uncertainty. The remaining hypothesis is that real reporting officers will reach the correct decision faster on consented, redacted client records. The next test is an eight-to-twelve-pack varied sample reviewed independently by two programme officers.
