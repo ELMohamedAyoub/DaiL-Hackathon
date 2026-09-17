@@ -1,3 +1,4 @@
+import re
 from typing import Any, Literal, TypedDict
 
 
@@ -102,6 +103,117 @@ class PartnerQuestion(TypedDict):
     source_evidence_id: str
 
 
+class SourceCrossCheck(TypedDict):
+    status: Literal["needs-review", "unresolved"]
+    source_evidence_ids: list[str]
+    finding: str
+    action: str
+
+
+_NUMBER_WORDS = {
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+    "thirty": 30,
+}
+
+
+def _number_mentions(text: str) -> list[int]:
+    """Extract only simple demo-scale number mentions for comparison.
+
+    These mentions never become report claims. They only help a reviewer see
+    whether narrative evidence echoes or contradicts an authoritative value.
+    """
+    tokens = re.findall(r"\b(?:\d+|[a-z]+)\b", text.lower())
+    numbers: list[int] = []
+    for token in tokens:
+        value = int(token) if token.isdigit() else _NUMBER_WORDS.get(token)
+        if value is not None and value not in numbers:
+            numbers.append(value)
+    return numbers
+
+
+def _build_source_cross_checks(
+    claims: list[NumericClaim], flagged_evidence: list[FlaggedEvidence]
+) -> list[SourceCrossCheck]:
+    claims_by_kind = {claim["kind"]: claim for claim in claims}
+    plan = claims_by_kind.get("planned-capacity")
+    attendance = claims_by_kind.get("attendance")
+    if plan is None or attendance is None:
+        return []
+
+    checks: list[SourceCrossCheck] = []
+    for narrative in flagged_evidence:
+        mentions = _number_mentions(narrative["source_text"])
+        source_ids = [
+            plan["source_evidence_id"],
+            attendance["source_evidence_id"],
+            narrative["evidence_id"],
+        ]
+        if not mentions:
+            checks.append(
+                {
+                    "status": "unresolved",
+                    "source_evidence_ids": source_ids,
+                    "finding": (
+                        f"{narrative['evidence_id']} contains no comparable number. "
+                        f"The plan states {plan['value']} and attendance states {attendance['value']}."
+                    ),
+                    "action": "Keep the narrative visible and ask the partner what it refers to.",
+                }
+            )
+            continue
+
+        mentioned = ", ".join(str(value) for value in mentions)
+        if plan["value"] in mentions and attendance["value"] not in mentions:
+            relation = (
+                f"matches planned capacity of {plan['value']} and differs from "
+                f"attendance of {attendance['value']}"
+            )
+        elif attendance["value"] in mentions and plan["value"] not in mentions:
+            relation = (
+                f"matches attendance of {attendance['value']} and differs from "
+                f"planned capacity of {plan['value']}"
+            )
+        elif plan["value"] in mentions and attendance["value"] in mentions:
+            relation = "contains both the plan and attendance values"
+        else:
+            relation = (
+                f"matches neither planned capacity of {plan['value']} nor "
+                f"attendance of {attendance['value']}"
+            )
+        checks.append(
+            {
+                "status": "needs-review",
+                "source_evidence_ids": source_ids,
+                "finding": f"{narrative['evidence_id']} mentions {mentioned}; it {relation}.",
+                "action": (
+                    "Confirm whether the narrative describes the target, not actual attendance. "
+                    "Do not use it as a numeric source until confirmed."
+                ),
+            }
+        )
+    return checks
+
+
 class C08Report(TypedDict):
     programme_id: str
     programme_name: str
@@ -110,6 +222,7 @@ class C08Report(TypedDict):
     numeric_claims: list[NumericClaim]
     completion_claim: CompletionClaim
     flagged_evidence: list[FlaggedEvidence]
+    source_cross_checks: list[SourceCrossCheck]
     partner_questions: list[PartnerQuestion]
     reviewer_notes: list[dict[str, Any]]
     data_status: str
@@ -196,14 +309,16 @@ def build_report(programme_id: str, data: dict[str, Any]) -> C08Report:
             }
         )
 
+    numeric_claims = _build_numeric_claims(data["evidence"], period)
     return {
         "programme_id": programme["id"],
         "programme_name": programme["name"],
         "reporting_period": period,
         "status": "draft",
-        "numeric_claims": _build_numeric_claims(data["evidence"], period),
+        "numeric_claims": numeric_claims,
         "completion_claim": completion_claim,
         "flagged_evidence": flagged_evidence,
+        "source_cross_checks": _build_source_cross_checks(numeric_claims, flagged_evidence),
         "partner_questions": partner_questions,
         "reviewer_notes": data["reviewer_notes"],
         "data_status": data["data_status"],

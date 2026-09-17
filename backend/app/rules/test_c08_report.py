@@ -66,6 +66,33 @@ def test_voice_note_is_flagged_and_never_cites_a_hard_number():
     assert report["flagged_evidence"][0]["disposition"] == "excluded-from-numeric-claims"
 
 
+def test_plan_attendance_and_voice_note_are_cross_checked_together():
+    """The narrative stays non-authoritative, but it must participate in the
+    comparison instead of disappearing into a generic excluded bucket."""
+    report = build_report("PRG-SYN", load_source_data())
+
+    comparison = report["source_cross_checks"][0]
+    assert comparison["source_evidence_ids"] == ["PLAN-A", "SHEET-A", "VOICE-A"]
+    assert comparison["status"] == "needs-review"
+    assert "20" in comparison["finding"]
+    assert "planned capacity" in comparison["finding"]
+    assert "attendance of 12" in comparison["finding"]
+    assert "target, not actual attendance" in comparison["action"]
+
+
+def test_narrative_without_a_number_is_still_cross_checked_as_unresolved():
+    data = load_source_data()
+    voice_note = next(item for item in data["evidence"] if item["id"] == "VOICE-A")
+    voice_note["text"] = "Turnout felt strong, but I need to check the register."
+
+    report = build_report("PRG-SYN", data)
+
+    comparison = report["source_cross_checks"][0]
+    assert comparison["status"] == "unresolved"
+    assert comparison["source_evidence_ids"] == ["PLAN-A", "SHEET-A", "VOICE-A"]
+    assert "no comparable number" in comparison["finding"].lower()
+
+
 def test_claim_values_stay_consistent_with_their_source_text():
     """build_report hardcodes 12/20 rather than parsing source_text. If
     initial.json's evidence wording ever changes, this catches the drift
