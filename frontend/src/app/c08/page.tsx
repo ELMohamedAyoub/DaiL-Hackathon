@@ -52,7 +52,11 @@ type Report = {
   rules: string[];
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8461";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? (
+  typeof window === "undefined"
+    ? "http://localhost:8461"
+    : `${window.location.protocol}//${window.location.hostname}:8461`
+);
 const REVIEWER_NAME = "Maya El Idrissi";
 
 type ProgrammeSummary = { id: string; label: string; official: boolean };

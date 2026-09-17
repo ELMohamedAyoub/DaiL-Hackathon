@@ -4,4 +4,4 @@
 set -a
 source .env
 set +a
-exec uvicorn app.main:app --reload --env-file .env
+exec uvicorn app.main:app --host "${UVICORN_HOST:-0.0.0.0}" --reload --env-file .env
