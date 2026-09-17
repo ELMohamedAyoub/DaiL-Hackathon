@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type NumericClaim = {
   kind: "attendance" | "planned-capacity";
@@ -59,24 +59,34 @@ function EvidenceReveal({ id, text }: { id: string; text: string }) {
   );
 }
 
+type Stage = "idle" | "arrived" | "processed";
+
 export default function C08Page() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const [loadingEvidence, setLoadingEvidence] = useState(false);
   const [showSendBack, setShowSendBack] = useState(false);
   const [sendBackReason, setSendBackReason] = useState("");
+  const [stage, setStage] = useState<Stage>("idle");
 
-  useEffect(() => {
+  function simulateIncomingEvidence() {
+    setLoadingEvidence(true);
+    setError(null);
     fetch(`${API_URL}/programmes/${PROGRAMME_ID}/report`)
       .then((response) => {
         if (!response.ok) throw new Error();
         return response.json() as Promise<Report>;
       })
-      .then(setReport)
+      .then((data) => {
+        setReport(data);
+        setStage("arrived");
+      })
       .catch(() =>
-        setError("Report unavailable. Start the API on port 8461 and reload this page."),
-      );
-  }, []);
+        setError("Report unavailable. Start the API on port 8461 and try again."),
+      )
+      .finally(() => setLoadingEvidence(false));
+  }
 
   async function approve() {
     setWorking(true);
@@ -188,10 +198,85 @@ export default function C08Page() {
 
         {error && <p role="alert" className="mt-8 border-l-4 border-danger bg-danger-soft p-5 text-sm">{error}</p>}
 
-        {!report && !error && <p className="mt-8 animate-pulse text-sm text-muted">Loading evidence-linked report…</p>}
+        {stage === "idle" && !error && (
+          <section className="mt-8 border border-border bg-surface px-5 py-8 sm:px-8">
+            <p className="tag">data source</p>
+            <p className="mt-2 font-mono text-xs text-muted">
+              octopus-candidate-pack/C08/initial.json
+            </p>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-muted">
+              Nothing has been read yet. Trigger the simulated submission to load the four
+              evidence records exactly as they exist in that file.
+            </p>
+            <button
+              type="button"
+              onClick={simulateIncomingEvidence}
+              disabled={loadingEvidence}
+              className="approval-button mt-5"
+            >
+              {loadingEvidence ? "Reading evidence…" : "Simulate: evidence submitted for review"}
+            </button>
+          </section>
+        )}
 
         {report && (
           <div className="evidence-reveal">
+            <section aria-labelledby="what-arrived-heading" className="mt-8 border border-border bg-slate-soft px-4 py-6 sm:px-7 sm:py-8">
+              <h2 id="what-arrived-heading" className="font-display text-3xl">What arrived</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+                Four source records arrived with details that disagree before processing.
+              </p>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-3">
+                {[
+                  {
+                    id: report.numeric_claims.find((claim) => claim.kind === "planned-capacity")?.source_evidence_id ?? "PLAN-A",
+                    text: report.numeric_claims.find((claim) => claim.kind === "planned-capacity")?.source_text ?? "",
+                    position: "lg:-translate-y-1 lg:-rotate-1",
+                  },
+                  {
+                    id: report.numeric_claims.find((claim) => claim.kind === "attendance")?.source_evidence_id ?? "SHEET-A",
+                    text: report.numeric_claims.find((claim) => claim.kind === "attendance")?.source_text ?? "",
+                    position: "lg:translate-y-2 lg:rotate-1",
+                  },
+                  {
+                    id: report.flagged_evidence[0]?.evidence_id ?? "VOICE-A",
+                    text: report.flagged_evidence[0]?.source_text ?? "",
+                    position: "lg:translate-y-1 lg:-rotate-2",
+                  },
+                  {
+                    id: report.completion_claim.source_evidence_id,
+                    text: report.completion_claim.source_text,
+                    position: "lg:-translate-y-1 lg:rotate-1",
+                  },
+                ].map((evidence) => (
+                  <article
+                    key={evidence.id}
+                    className={`min-w-0 border border-border bg-paper p-4 ${evidence.position}`}
+                  >
+                    <p className="font-mono text-xs font-bold text-muted">{evidence.id}</p>
+                    <p className="mt-3 text-sm leading-6">{evidence.text}</p>
+                  </article>
+                ))}
+              </div>
+
+              {stage === "arrived" && (
+                <button
+                  type="button"
+                  onClick={() => setStage("processed")}
+                  className="approval-button mt-7"
+                >
+                  Process this evidence
+                </button>
+              )}
+            </section>
+
+            {stage === "processed" && (
+              <>
+            <div className="border-b border-border pb-4 pt-10">
+              <h2 className="font-display text-2xl sm:text-3xl">What we can actually report</h2>
+            </div>
+
             <section className="report-masthead">
               <div>
                 <span className="tag">source data</span>
@@ -350,6 +435,8 @@ export default function C08Page() {
                 <span className="tag mr-2">locked reviewer note</span>
                 {report.reviewer_notes[0].text}
               </aside>
+            )}
+              </>
             )}
           </div>
         )}
