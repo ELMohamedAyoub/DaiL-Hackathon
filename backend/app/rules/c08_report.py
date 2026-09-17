@@ -95,7 +95,7 @@ def build_report(programme_id: str, data: dict[str, Any]) -> C08Report:
         completion_claim = {
             "kind": "completion",
             "value": "not stated",
-            "statement": "not stated — no record of type assessment present",
+            "statement": "not stated, no record of type assessment present",
             "period": period,
             "source_evidence_id": "",
             "source_text": "",
