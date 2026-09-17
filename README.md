@@ -1,19 +1,19 @@
-# Octopus Day — [project name TBD]
+# Octopus Day — C08 Evidence Report Desk
 
 ## Problem
-_One sentence: what the client's problem is._
+A programme reporting officer must reconcile a plan target, attendance register, narrative update, and possibly-missing assessment without turning uncertain evidence into a reportable fact.
 
 ## Approach
-_What we built and why this shape — the smallest end-to-end slice that proves the concept._
+We built a result-first, evidence-linked report desk. It keeps targets separate from attendance, keeps narrative evidence visible but non-authoritative, refuses to infer completion, and leaves the final approve/send-back decision with a human reviewer.
 
 ## Tech stack
-- Backend: FastAPI + LangGraph (Anthropic Claude)
+- Backend: FastAPI + deterministic Python rules + DeepSeek for disclosed ambiguous extraction and report Q&A
 - Frontend: Next.js + Tailwind CSS
 
 ## How to run
 ```bash
 # Backend
-cd backend && source .venv/bin/activate && ./dev.sh
+cd backend && uv sync && ./dev.sh
 # → http://localhost:8461
 
 # Frontend
@@ -22,4 +22,9 @@ cd frontend && npm run dev
 ```
 
 ## What's built vs. what's next
-_What works end-to-end, what's a rough edge, what we'd do with more time._
+
+Built end-to-end: deterministic report construction, source-linked claims, three-source cross-checks, explicit unknown completion state, partner follow-up questions, simulated human review with visible history, demo-only variation cases, and print/PDF export.
+
+Simulated or deferred: source ingestion, authentication, durable persistence, real reviewer identity, external publication, and production document extraction. The next validation is an 8–12-pack consented, redacted sample reviewed independently by two programme officers.
+
+See the [C08 build guide](octopus-candidate-pack/C08/BUILD.md), [Wolf handoff](octopus-candidate-pack/C08/WOLF_HANDOFF.md), [data-readiness plan](octopus-candidate-pack/C08/DATA_READINESS.md), and [presentation script](octopus-candidate-pack/PRESENTATION_SCRIPT.md).
