@@ -41,6 +41,7 @@ type Report = {
   data_status: string;
   approval?: { reviewer_name: string; simulated: true; effect: string };
   send_back?: { reviewer_name: string; reason: string; simulated: true };
+  history: { event: string; reviewer_name: string; detail: string; at: string }[];
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8461";
@@ -163,6 +164,26 @@ export default function C08Page() {
       </header>
 
       <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-8 sm:py-12">
+        <section className="no-print mb-10 border border-navy bg-navy px-5 py-7 text-white sm:px-8 sm:py-9">
+          <p className="inline-flex border border-white/40 bg-white/10 px-1.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.04em] text-white">
+            the problem
+          </p>
+          <blockquote className="mt-3 max-w-2xl font-display text-xl leading-snug sm:text-2xl">
+            &ldquo;A field update, an attendance sheet and a coordinator note tell slightly
+            different stories. I need a report that explains what is supported, what is
+            uncertain, and what we should ask the partner next.&rdquo;
+          </blockquote>
+          <p className="mt-3 text-xs text-slate-300">
+            Programme reporting officer, C08 (synthetic exercise dialogue, not a real client
+            quote)
+          </p>
+          <p className="mt-5 max-w-2xl text-sm leading-6 text-slate-200">
+            What follows is a working prototype, not slides. Real: the rules engine, the live
+            API, this interface. Simulated: the exercise data, the named reviewer, and the
+            approval action.
+          </p>
+        </section>
+
         <section className="grid gap-6 border-b border-border pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
             <p className="mb-3 text-sm font-semibold text-teal">C08 · participation report</p>
@@ -383,6 +404,32 @@ export default function C08Page() {
                 ))}
               </div>
             </section>
+
+            {report.history.length > 0 && (
+              <section className="mb-8" aria-labelledby="history-heading">
+                <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h2 id="history-heading" className="font-display text-2xl">Review history</h2>
+                    <p className="mt-1 text-sm text-muted">Append-only. Nothing here is rewritten, only added to.</p>
+                  </div>
+                  <span className="tag">simulated reviewer actions</span>
+                </div>
+                <ol className="history-list">
+                  {report.history.map((entry, index) => (
+                    <li key={`${entry.at}-${index}`} className={`history-entry history-${entry.event}`}>
+                      <span className="history-marker" aria-hidden="true" />
+                      <div>
+                        <p className="history-headline">
+                          <strong>{entry.reviewer_name}</strong> {entry.event === "approved" ? "approved" : "sent back"} the report
+                        </p>
+                        {entry.detail && <p className="history-detail">{entry.detail}</p>}
+                        <p className="history-timestamp">{entry.at}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
 
             <section className="review-strip">
               <div>

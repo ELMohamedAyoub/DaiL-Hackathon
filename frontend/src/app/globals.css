@@ -238,3 +238,27 @@ button {
   .evidence-source blockquote { display: block !important; margin-top: 0.4rem; }
   .claim-card, .report-masthead, .flagged-band, .review-strip { border-color: #999; }
 }
+
+.history-list {
+  display: grid;
+  gap: 0;
+  border-left: 2px solid var(--color-border);
+  padding-left: 1.25rem;
+  margin-left: 0.4rem;
+}
+.history-entry { position: relative; padding-bottom: 1.25rem; }
+.history-entry:last-child { padding-bottom: 0; }
+.history-marker {
+  position: absolute;
+  left: -1.56rem;
+  top: 0.2rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 2px solid var(--color-surface);
+  background: var(--color-muted);
+}
+.history-approved .history-marker { background: var(--color-teal); }
+.history-sent-back .history-marker { background: var(--color-danger); }
+.history-headline { font-size: 0.85rem; font-weight: 700; }
+.history-detail { margin-top: 0.2rem; font-size: 0.8rem; color: var(--color-ink); }
+.history-timestamp { margin-top: 0.2rem; font-family: var(--font-sans); font-size: 0.65rem; color: var(--color-muted); }
