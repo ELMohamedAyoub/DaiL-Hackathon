@@ -105,8 +105,52 @@ button {
   animation: evidence-reveal 220ms ease-out;
 }
 
+@keyframes claim-card-reveal {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.claim-card-reveal {
+  animation: claim-card-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .evidence-reveal { animation: none; }
+  .evidence-reveal,
+  .claim-card-reveal { animation: none; }
+}
+
+.report-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(245, 247, 248, 0.92);
+  backdrop-filter: blur(6px);
+  padding: 0.75rem 0;
+  margin-top: 1.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.report-nav a {
+  color: var(--color-muted);
+  transition: color 140ms ease;
+}
+.report-nav a:hover,
+.report-nav a:focus-visible {
+  color: var(--color-teal);
+}
+.report-nav a:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 3px;
+}
+
+#claims, #excluded, #questions, #history, #review {
+  scroll-margin-top: 3.5rem;
 }
 
 /* C08 evidence report: extends the C07 tag, stamp, and reveal language. */
@@ -132,7 +176,7 @@ button {
 .state-report-sent-back { background: var(--color-danger-soft); color: var(--color-danger); }
 .state-report-approved { background: var(--color-teal-soft); color: var(--color-teal); }
 .report-status-wrap { max-width: 300px; }
-.send-back-reason { border-left: 2px solid var(--color-danger); background: var(--color-danger-soft); padding: 0.7rem 0.8rem; color: var(--color-danger); font-size: 0.75rem; line-height: 1.45; }
+.send-back-reason { background: var(--color-danger-soft); padding: 0.7rem 0.8rem; color: var(--color-danger); font-size: 0.75rem; line-height: 1.45; }
 .send-back-reason strong, .send-back-reason span { display: block; }
 .send-back-reason span { margin-top: 0.2rem; color: var(--color-ink); }
 
@@ -177,7 +221,8 @@ button {
 .evidence-source { margin-top: auto; padding-top: 1rem; }
 .evidence-source summary { width: fit-content; color: var(--color-teal); cursor: pointer; font-size: 0.72rem; font-weight: 800; }
 .evidence-source summary:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 3px; }
-.evidence-source blockquote { margin-top: 0.8rem; border-left: 2px solid currentColor; padding: 0.7rem 0.8rem; color: var(--color-ink); font-size: 0.75rem; line-height: 1.6; }
+.evidence-source blockquote { margin-top: 0.8rem; background: var(--color-slate-soft); padding: 0.7rem 0.8rem; color: var(--color-ink); font-size: 0.75rem; line-height: 1.6; }
+.flagged-band .evidence-source blockquote { background: rgba(182, 74, 54, 0.08); }
 .evidence-source cite { display: block; margin-top: 0.45rem; color: var(--color-muted); font-size: 0.65rem; font-style: normal; font-weight: 700; }
 
 .flagged-band { display: grid; grid-template-columns: auto 1fr; gap: 1rem; border: 1px solid #dfb0a7; background: var(--color-danger-soft); padding: 1.25rem; }
@@ -278,3 +323,27 @@ button {
 .programme-option:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 2px; }
 .programme-option-active { border-color: var(--color-navy); background: var(--color-surface); }
 .programme-option-active span:first-child { color: var(--color-navy); }
+
+.rule-check {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.rule-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+.rule-mark-pass { color: var(--color-teal); }
+.rule-mark-fail { color: var(--color-danger); }

@@ -42,6 +42,7 @@ type Report = {
   approval?: { reviewer_name: string; simulated: true; effect: string };
   send_back?: { reviewer_name: string; reason: string; simulated: true };
   history: { event: string; reviewer_name: string; detail: string; at: string }[];
+  rules: string[];
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8461";
@@ -49,10 +50,20 @@ const REVIEWER_NAME = "Maya El Idrissi";
 
 type ProgrammeSummary = { id: string; label: string; official: boolean };
 
-function EvidenceReveal({ id, text }: { id: string; text: string }) {
+function EvidenceReveal({
+  id,
+  text,
+  defaultOpen = false,
+  label = "Reveal raw source text",
+}: {
+  id: string;
+  text: string;
+  defaultOpen?: boolean;
+  label?: string;
+}) {
   return (
-    <details className="evidence-source group">
-      <summary>Reveal raw source text</summary>
+    <details className="evidence-source group" open={defaultOpen}>
+      <summary>{label}</summary>
       <blockquote>
         “{text}”
         <cite>{id} · synthetic source record</cite>
@@ -236,7 +247,11 @@ export default function C08Page() {
           )}
         </section>
 
-        {error && <p role="alert" className="mt-8 border-l-4 border-danger bg-danger-soft p-5 text-sm">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-8 bg-danger-soft p-5 text-sm font-semibold text-danger">
+            {error}
+          </p>
+        )}
 
         {stage === "idle" && !error && (
           <section className="mt-8 border border-border bg-surface px-5 py-8 sm:px-8">
@@ -294,27 +309,27 @@ export default function C08Page() {
                 Four source records arrived with details that disagree before processing.
               </p>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-3">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4 md:gap-3">
                 {[
                   {
                     id: report.numeric_claims.find((claim) => claim.kind === "planned-capacity")?.source_evidence_id ?? "PLAN-A",
                     text: report.numeric_claims.find((claim) => claim.kind === "planned-capacity")?.source_text ?? "",
-                    position: "lg:-translate-y-1 lg:-rotate-1",
+                    position: "md:-translate-y-1 md:-rotate-1",
                   },
                   {
                     id: report.numeric_claims.find((claim) => claim.kind === "attendance")?.source_evidence_id ?? "SHEET-A",
                     text: report.numeric_claims.find((claim) => claim.kind === "attendance")?.source_text ?? "",
-                    position: "lg:translate-y-2 lg:rotate-1",
+                    position: "md:translate-y-2 md:rotate-1",
                   },
                   {
                     id: report.flagged_evidence[0]?.evidence_id ?? "VOICE-A",
                     text: report.flagged_evidence[0]?.source_text ?? "",
-                    position: "lg:translate-y-1 lg:-rotate-2",
+                    position: "md:translate-y-1 md:-rotate-2",
                   },
                   {
                     id: report.completion_claim.source_evidence_id,
                     text: report.completion_claim.source_text,
-                    position: "lg:-translate-y-1 lg:rotate-1",
+                    position: "md:-translate-y-1 md:rotate-1",
                   },
                 ].map((evidence) => (
                   <article
@@ -344,6 +359,52 @@ export default function C08Page() {
               <h2 className="font-display text-2xl sm:text-3xl">What we can actually report</h2>
             </div>
 
+            <section aria-labelledby="rules-heading" className="mt-6 border border-border bg-surface px-5 py-6 sm:px-7">
+              <h2 id="rules-heading" className="font-display text-xl">Rules applied</h2>
+              <p className="mt-1 text-sm text-muted">
+                The exact rule text from the source record, checked against this report.
+              </p>
+              <ol className="mt-4 grid gap-2">
+                {[
+                  {
+                    text: report.rules[0],
+                    satisfied: report.numeric_claims.every(
+                      (claim) => claim.unit && claim.period && claim.source_evidence_id,
+                    ) && Boolean(report.completion_claim.period),
+                  },
+                  {
+                    text: report.rules[1],
+                    satisfied: report.status === "draft" || Boolean(report.approval),
+                  },
+                  {
+                    text: report.rules[2],
+                    satisfied: report.completion_claim.value === "not stated",
+                  },
+                ].map((rule, index) =>
+                  rule.text ? (
+                    <li
+                      key={rule.text}
+                      className="rule-check claim-card-reveal"
+                      style={{ animationDelay: `${index * 110}ms` }}
+                    >
+                      <span className={`rule-mark ${rule.satisfied ? "rule-mark-pass" : "rule-mark-fail"}`} aria-hidden="true">
+                        {rule.satisfied ? "✓" : "!"}
+                      </span>
+                      <span>{rule.text}</span>
+                    </li>
+                  ) : null,
+                )}
+              </ol>
+            </section>
+
+            <nav aria-label="Report sections" className="report-nav no-print">
+              <a href="#claims">Claims</a>
+              <a href="#excluded">Excluded</a>
+              <a href="#questions">Questions</a>
+              {report.history.length > 0 && <a href="#history">History</a>}
+              <a href="#review">Review</a>
+            </nav>
+
             <section className="report-masthead">
               <div>
                 <span className="tag">source data</span>
@@ -365,7 +426,7 @@ export default function C08Page() {
               </div>
             </section>
 
-            <section aria-labelledby="claims-heading" className="py-8">
+            <section id="claims" aria-labelledby="claims-heading" className="py-8">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 id="claims-heading" className="font-display text-3xl">Claim ledger</h2>
@@ -375,8 +436,12 @@ export default function C08Page() {
               </div>
 
               <div className="claim-grid">
-                {report.numeric_claims.map((claim) => (
-                  <article key={claim.kind} className={`claim-card claim-${claim.kind}`}>
+                {report.numeric_claims.map((claim, index) => (
+                  <article
+                    key={claim.kind}
+                    className={`claim-card claim-${claim.kind} claim-card-reveal`}
+                    style={{ animationDelay: `${index * 90}ms` }}
+                  >
                     <div className="claim-card-topline">
                       <span>{claim.kind === "attendance" ? "Attendance" : "Planned capacity"}</span>
                       <span className="font-mono">{claim.source_evidence_id}</span>
@@ -394,7 +459,10 @@ export default function C08Page() {
                   </article>
                 ))}
 
-                <article className="claim-card claim-completion">
+                <article
+                  className="claim-card claim-completion claim-card-reveal"
+                  style={{ animationDelay: `${report.numeric_claims.length * 90}ms` }}
+                >
                   <div className="claim-card-topline">
                     <span>Completion</span>
                     <span className="font-mono">{report.completion_claim.source_evidence_id}</span>
@@ -410,7 +478,7 @@ export default function C08Page() {
               </div>
             </section>
 
-            <section className="flagged-band" aria-labelledby="flagged-heading">
+            <section id="excluded" className="flagged-band" aria-labelledby="flagged-heading">
               <div className="flagged-marker" aria-hidden="true">!</div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -421,13 +489,18 @@ export default function C08Page() {
                   <div key={item.evidence_id} className="mt-4">
                     <p className="font-mono text-xs font-bold text-danger">{item.evidence_id} · {item.evidence_type}</p>
                     <p className="mt-2 max-w-3xl text-sm leading-6">{item.reason}</p>
-                    <EvidenceReveal id={item.evidence_id} text={item.source_text} />
+                    <EvidenceReveal
+                      id={item.evidence_id}
+                      text={item.source_text}
+                      defaultOpen
+                      label="Read excluded record"
+                    />
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="py-8" aria-labelledby="partner-questions-heading">
+            <section id="questions" className="py-8" aria-labelledby="partner-questions-heading">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 id="partner-questions-heading" className="font-display text-3xl">Questions for the partner</h2>
@@ -452,7 +525,7 @@ export default function C08Page() {
             </section>
 
             {report.history.length > 0 && (
-              <section className="mb-8" aria-labelledby="history-heading">
+              <section id="history" className="mb-8" aria-labelledby="history-heading">
                 <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <h2 id="history-heading" className="font-display text-2xl">Review history</h2>
@@ -477,7 +550,7 @@ export default function C08Page() {
               </section>
             )}
 
-            <section className="review-strip">
+            <section id="review" className="review-strip">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-sm font-bold">Named reviewer</h2>
@@ -532,7 +605,7 @@ export default function C08Page() {
             </section>
 
             {report.reviewer_notes[0] && (
-              <aside className="mt-5 border-l-2 border-navy bg-slate-soft px-4 py-3 text-sm leading-6">
+              <aside className="mt-5 bg-slate-soft px-4 py-3 text-sm leading-6">
                 <span className="mr-2 font-mono text-xs font-bold">{report.reviewer_notes[0].id}</span>
                 <span className="tag mr-2">locked reviewer note</span>
                 {report.reviewer_notes[0].text}
