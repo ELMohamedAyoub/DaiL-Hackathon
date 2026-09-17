@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import c08, candidates, readiness, vectors
+from app.routers import c08, c08_ask, candidates, readiness, vectors
 
 app = FastAPI()
 
@@ -29,3 +29,4 @@ app.include_router(candidates.router, tags=["Candidates"], prefix="/candidates")
 app.include_router(vectors.router, tags=["Vectors"], prefix="/vectors")
 app.include_router(readiness.router, tags=["C07 readiness"])
 app.include_router(c08.router, tags=["C08 report"])
+app.include_router(c08_ask.router, tags=["C08 report"])

@@ -78,6 +78,69 @@ function EvidenceReveal({
   );
 }
 
+function AskAboutReport({ programmeId }: { programmeId: string }) {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [askError, setAskError] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+
+  async function ask(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = question.trim();
+    if (!trimmed) return;
+
+    setAsking(true);
+    setAskError(null);
+    setAnswer(null);
+    try {
+      const response = await fetch(`${API_URL}/programmes/${programmeId}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: trimmed }),
+      });
+      if (!response.ok) throw new Error();
+      const data = (await response.json()) as { answer: string };
+      setAnswer(data.answer);
+    } catch {
+      setAskError("Couldn't get an answer. Confirm the API is running, then try again.");
+    } finally {
+      setAsking(false);
+    }
+  }
+
+  return (
+    <section className="ask-panel no-print" aria-labelledby="ask-heading">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 id="ask-heading" className="font-display text-xl">Ask about this report</h2>
+        <span className="tag">answers only from this report's evidence</span>
+      </div>
+      <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
+        Grounded in the claim ledger above, nothing else. It will say so, and name the
+        missing record, if the report doesn't contain the answer.
+      </p>
+      <form onSubmit={ask} className="ask-form">
+        <input
+          type="text"
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder="e.g. How many people completed the programme?"
+          disabled={asking}
+          aria-label="Question about this report"
+        />
+        <button type="submit" disabled={asking || !question.trim()}>
+          {asking ? "Asking…" : "Ask"}
+        </button>
+      </form>
+      {answer && <p className="ask-answer">{answer}</p>}
+      {askError && (
+        <p role="alert" className="mt-3 bg-danger-soft p-3 text-xs font-semibold text-danger">
+          {askError}
+        </p>
+      )}
+    </section>
+  );
+}
+
 type Stage = "idle" | "processed";
 
 export default function C08Page() {
@@ -555,7 +618,7 @@ export default function C08Page() {
                     <p className="claim-interpretation">{claim.interpretation}</p>
                     <dl className="claim-meta">
                       <div><dt>Period</dt><dd>{claim.period}</dd></div>
-                      <div><dt>Source</dt><dd>{claim.source_evidence_id}</dd></div>
+                      <div><dt>Unit</dt><dd>{claim.unit}</dd></div>
                     </dl>
                     <EvidenceReveal id={claim.source_evidence_id} text={claim.source_text} />
                   </article>
@@ -573,7 +636,6 @@ export default function C08Page() {
                   <p className="claim-interpretation">{report.completion_claim.statement}</p>
                   <dl className="claim-meta">
                     <div><dt>Period</dt><dd>{report.completion_claim.period}</dd></div>
-                    <div><dt>Source</dt><dd>{report.completion_claim.source_evidence_id}</dd></div>
                   </dl>
                   <EvidenceReveal id={report.completion_claim.source_evidence_id} text={report.completion_claim.source_text} />
                 </article>
@@ -659,6 +721,8 @@ export default function C08Page() {
                 {report.reviewer_notes[0].text}
               </aside>
             )}
+
+            <AskAboutReport programmeId={programmeId} />
               </>
             )}
           </div>
