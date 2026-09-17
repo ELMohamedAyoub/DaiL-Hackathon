@@ -14,12 +14,10 @@
 
 **Depends on / blocked by:** Nothing — independent follow-up to the evidence-class-table + reconciliation rewrite in `backend/app/rules/c08_report.py`.
 
-## C08 ask-about-report: no programmatic citation validation
+## C08 ask-about-report: citation validation
 
-**What:** `backend/app/routers/c08_ask.py` instructs the model (via system prompt) to cite an evidence_id for every factual claim and to refuse when the report doesn't state something, but nothing checks the response afterward. A cited evidence_id that doesn't exist in the report, or a number that doesn't match, would currently reach the user unfiltered.
+**Resolved.** `backend/app/routers/c08_ask.py` now extracts every evidence-ID-shaped token from the model's answer and checks each one against the real evidence set for that programme; any answer citing an ID that doesn't exist is withheld and replaced with a fixed, honest refusal message rather than shown as-is. The claim-construction path (`c08_report.py`) still has no model dependency at all; this validation only guards the separate, downstream Q&A layer.
 
-**Why it's still the right scope for this round:** this is the one deliberate LLM touchpoint in C08, deliberately downstream of and never feeding back into claim construction (`c08_report.py` stays untouched by it). Verified live against two representative questions (a supported fact, a genuinely unstated one) and it behaved correctly both times, but that is not the same as a structural guarantee.
-
-**Fix if revisited:** parse the response, extract cited evidence_ids, assert each exists in the current report's evidence set, and fall back to a fixed refusal string on any mismatch, matching the validated-hybrid pattern discussed for the partner-questions generator (never shipped there either, for the same reason: not needed once templates covered every case deterministically).
+**Remaining gap, lower priority:** citation IDs are checked, but a cited number attached to a real ID is not cross-checked against that record's actual value. Low risk given the system prompt's instruction to answer only from the supplied JSON and the model's demonstrated behavior in testing, but not a structural guarantee the way the ID check is.
 
 **Depends on / blocked by:** Nothing; independent of the negation-handling TODO above.
