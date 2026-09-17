@@ -149,8 +149,38 @@ button {
   outline-offset: 3px;
 }
 
-#cross-checks, #claims, #excluded, #questions, #history, #review {
+#cross-checks, #claims, #excluded, #questions, #history, #review, #ask {
   scroll-margin-top: 3.5rem;
+}
+
+.report-nav-reset {
+  margin-left: auto;
+  color: var(--color-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 140ms ease;
+}
+.report-nav-reset:hover,
+.report-nav-reset:focus-visible { color: var(--color-teal); }
+.report-nav-reset:focus-visible { outline: 2px solid var(--color-teal); outline-offset: 3px; }
+
+.pitch-close {
+  margin: 2.5rem 0 1rem;
+  padding: 1.75rem 0;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+.pitch-close p {
+  margin: 0 auto;
+  max-width: 40ch;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1.35;
+  color: var(--color-navy);
+}
+
+@media (max-width: 639px) {
+  .report-nav-reset { margin-left: 0; }
 }
 
 .decision-summary {

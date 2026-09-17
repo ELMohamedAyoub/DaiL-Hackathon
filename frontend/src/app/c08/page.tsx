@@ -586,6 +586,16 @@ export default function C08Page() {
               <a href="#excluded">Narrative context</a>
               <a href="#questions">Questions</a>
               {report.history.length > 0 && <a href="#history">History</a>}
+              <a href="#ask">Ask a question</a>
+              {programmes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => resetForNewProgramme(programmeId)}
+                  className="report-nav-reset"
+                >
+                  Try another case
+                </button>
+              )}
             </nav>
 
             <section className="report-masthead">
@@ -767,7 +777,16 @@ export default function C08Page() {
               </aside>
             )}
 
-            <AskAboutReport programmeId={programmeId} />
+            <div id="ask">
+              <AskAboutReport programmeId={programmeId} />
+            </div>
+
+            <section className="pitch-close" aria-label="Summary">
+              <p>
+                Every number above traced to one source record. Nothing was inferred.
+                Nothing was assumed. That is the whole pitch.
+              </p>
+            </section>
               </>
             )}
           </div>
