@@ -10,6 +10,7 @@ type NumericClaim = {
   source_evidence_id: string;
   source_text: string;
   interpretation: string;
+  confidence: "high" | "low";
 };
 
 type Report = {
@@ -78,6 +79,104 @@ function EvidenceReveal({
   );
 }
 
+const VISIBLE_GROUP_ITEMS = 2;
+
+function CrossCheckList({ checks }: { checks: Report["source_cross_checks"] }) {
+  const visible = checks.slice(0, VISIBLE_GROUP_ITEMS);
+  const rest = checks.slice(VISIBLE_GROUP_ITEMS);
+
+  function renderCard(check: Report["source_cross_checks"][number], index: number) {
+    return (
+      <article key={`${check.source_evidence_ids.join("-")}-${index}`} className="cross-check-card">
+        <div className="cross-check-status">
+          <span aria-hidden="true">!</span>
+          <strong>{check.status === "needs-review" ? "Review discrepancy" : "Unable to compare"}</strong>
+        </div>
+        <div>
+          <p className="font-mono text-xs font-bold text-muted">{check.source_evidence_ids.join(" ↔ ")}</p>
+          <p className="mt-3 text-sm font-semibold leading-6">{check.finding}</p>
+          <p className="mt-2 text-sm leading-6 text-muted"><strong>Next action:</strong> {check.action}</p>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <div className="grid gap-4">
+      {visible.map(renderCard)}
+      {rest.map((check, index) => {
+        const itemIndex = index + VISIBLE_GROUP_ITEMS;
+        const label = check.status === "needs-review" ? "Review discrepancy" : "Unable to compare";
+
+        return (
+          <details
+            key={`${check.source_evidence_ids.join("-")}-${itemIndex}`}
+            name="source-cross-checks"
+            className="group-collapse"
+          >
+            <summary>{check.source_evidence_ids.join(" ↔ ")} · {label}</summary>
+            <div className="mt-4">{renderCard(check, itemIndex)}</div>
+          </details>
+        );
+      })}
+    </div>
+  );
+}
+
+function FlaggedEvidenceList({ items }: { items: Report["flagged_evidence"] }) {
+  const visible = items.slice(0, VISIBLE_GROUP_ITEMS);
+  const rest = items.slice(VISIBLE_GROUP_ITEMS);
+
+  function renderItem(item: Report["flagged_evidence"][number]) {
+    return (
+      <div key={item.evidence_id} className="mt-4">
+        <p className="font-mono text-xs font-bold text-danger">{item.evidence_id} · {item.evidence_type}</p>
+        <p className="mt-2 max-w-3xl text-sm leading-6">{item.reason}</p>
+        <EvidenceReveal id={item.evidence_id} text={item.source_text} defaultOpen label="Read narrative record" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {visible.map(renderItem)}
+      {rest.map((item) => (
+        <details key={item.evidence_id} name="flagged-evidence" className="group-collapse mt-4">
+          <summary>{item.evidence_id} · {item.evidence_type}</summary>
+          <div>{renderItem(item)}</div>
+        </details>
+      ))}
+    </>
+  );
+}
+
+const WORKFLOW_STEPS = [
+  "Select evidence",
+  "Cross-check records",
+  "Review wording",
+  "Record decision",
+];
+
+function WorkflowProgress({ currentStep }: { currentStep: number }) {
+  return (
+    <nav className="workflow-progress no-print" aria-label="Review workflow">
+      <ol>
+        {WORKFLOW_STEPS.map((step, index) => {
+          const state = index < currentStep ? "complete" : index === currentStep ? "current" : "upcoming";
+          return (
+            <li key={step} className={`workflow-step workflow-step-${state}`} aria-current={state === "current" ? "step" : undefined}>
+              <span className="workflow-step-marker" aria-hidden="true">
+                {state === "complete" ? "✓" : index + 1}
+              </span>
+              <span className="workflow-step-label">{step}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 const SUGGESTED_QUESTIONS = [
   "How many people attended?",
   "Did the programme succeed overall?",
@@ -92,6 +191,11 @@ function AskAboutReport({ programmeId, reportReady }: { programmeId: string; rep
   const [exchanges, setExchanges] = useState<{ question: string; answer: string }[]>([]);
   const [askError, setAskError] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
+  const threadEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ block: "nearest" });
+  }, [exchanges, asking]);
 
   async function askText(text: string) {
     const trimmed = text.trim();
@@ -124,7 +228,10 @@ function AskAboutReport({ programmeId, reportReady }: { programmeId: string; rep
   return (
     <div className="ask-widget no-print">
       {open && (
-        <section className="ask-panel" aria-labelledby="ask-heading">
+        <section
+          className={`ask-panel${exchanges.length > 0 || asking ? " ask-panel-active" : ""}`}
+          aria-labelledby="ask-heading"
+        >
           <div className="ask-panel-header">
             <div>
               <h2 id="ask-heading" className="font-display text-base">Ask about this report</h2>
@@ -147,25 +254,27 @@ function AskAboutReport({ programmeId, reportReady }: { programmeId: string; rep
             </p>
           )}
 
-          {reportReady && exchanges.length === 0 && (
+          {reportReady && exchanges.length === 0 && !asking && (
             <p className="ask-empty">
               Grounded in the claim ledger, nothing else. It will say so, and name the
               missing record, if the report doesn&rsquo;t contain the answer.
             </p>
           )}
 
-          {exchanges.length > 0 && (
-            <div className="ask-thread">
+          {(exchanges.length > 0 || asking) && (
+            <div className="ask-thread" aria-live="polite">
               {exchanges.map((exchange, index) => (
                 <div key={index} className="ask-exchange">
                   <p className="ask-question">{exchange.question}</p>
                   <p className="ask-answer">{exchange.answer}</p>
                 </div>
               ))}
+              {asking && <p className="ask-answer ask-answer-loading">Checking the report evidence…</p>}
+              <div ref={threadEndRef} />
             </div>
           )}
 
-          {reportReady && (
+          {reportReady && exchanges.length === 0 && !asking && (
             <div className="ask-suggestions">
               {SUGGESTED_QUESTIONS.map((suggestion) => (
                 <button
@@ -233,6 +342,7 @@ function AskAboutReport({ programmeId, reportReady }: { programmeId: string; rep
 }
 
 type Stage = "idle" | "processed";
+type TransitionPhase = "idle" | "reading" | "ready";
 
 export default function C08Page() {
   const [programmes, setProgrammes] = useState<ProgrammeSummary[]>([]);
@@ -244,9 +354,17 @@ export default function C08Page() {
   const [showSendBack, setShowSendBack] = useState(false);
   const [sendBackReason, setSendBackReason] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
+  const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const reportStartRef = useRef<HTMLElement>(null);
   const attendanceClaim = report?.numeric_claims.find((claim) => claim.kind === "attendance");
   const planClaim = report?.numeric_claims.find((claim) => claim.kind === "planned-capacity");
+  const workflowStep = transitionPhase === "reading"
+    ? 1
+    : stage === "idle"
+      ? 0
+      : report?.status === "draft"
+        ? 2
+        : 3;
 
   useEffect(() => {
     fetch(`${API_URL}/programmes`)
@@ -270,24 +388,32 @@ export default function C08Page() {
     setShowSendBack(false);
     setSendBackReason("");
     setError(null);
+    setTransitionPhase("idle");
   }
 
-  function simulateIncomingEvidence() {
+  async function simulateIncomingEvidence() {
+    const startedAt = performance.now();
     setLoadingEvidence(true);
+    setTransitionPhase("reading");
     setError(null);
-    fetch(`${API_URL}/programmes/${programmeId}/report`)
-      .then((response) => {
-        if (!response.ok) throw new Error();
-        return response.json() as Promise<Report>;
-      })
-      .then((data) => {
-        setReport(data);
-        setStage("processed");
-      })
-      .catch(() =>
-        setError("Report unavailable. Start the API on port 8461 and try again."),
-      )
-      .finally(() => setLoadingEvidence(false));
+    try {
+      const response = await fetch(`${API_URL}/programmes/${programmeId}/report`);
+      if (!response.ok) throw new Error();
+      const data = (await response.json()) as Report;
+      const minimumReadingTime = 900;
+      const remaining = Math.max(0, minimumReadingTime - (performance.now() - startedAt));
+      await new Promise((resolve) => window.setTimeout(resolve, remaining));
+      setReport(data);
+      setTransitionPhase("ready");
+      await new Promise((resolve) => window.setTimeout(resolve, 520));
+      setStage("processed");
+      setTransitionPhase("idle");
+    } catch {
+      setError("Report unavailable. Start the API on port 8461 and try again.");
+      setTransitionPhase("idle");
+    } finally {
+      setLoadingEvidence(false);
+    }
   }
 
   async function approve() {
@@ -361,7 +487,7 @@ export default function C08Page() {
           </p>
         </div>
         {report.status === "approved" ? (
-          <div className="approval-confirmation">
+          <div className="approval-confirmation status-confirmation" role="status">
             Approved <span>simulated · status only</span>
           </div>
         ) : (
@@ -407,7 +533,27 @@ export default function C08Page() {
   }
 
   return (
-    <main className="min-h-screen bg-paper text-ink">
+    <main className={`min-h-[100dvh] bg-paper text-ink phase-${stage}`}>
+      {transitionPhase !== "idle" && (
+        <div className={`phase-transition phase-transition-${transitionPhase} no-print`} role="status" aria-live="polite">
+          <div className="phase-transition-glow" aria-hidden="true" />
+          <div className="phase-transition-card">
+            <div className="phase-scan" aria-hidden="true">
+              <span /><span /><span /><span />
+            </div>
+            <p className="phase-transition-kicker">
+              {transitionPhase === "reading" ? "Evidence review in progress" : "Evidence review complete"}
+            </p>
+            <h2>{transitionPhase === "reading" ? "Cross-checking every record" : "Traceable claims are ready"}</h2>
+            <p>
+              {transitionPhase === "reading"
+                ? "Separating supported counts, planned capacity and narrative context."
+                : "Opening the reviewer brief with every claim linked to its source."}
+            </p>
+            <div className="phase-progress" aria-hidden="true"><span /></div>
+          </div>
+        </div>
+      )}
       <header className="luma-header no-print">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-5 py-3 sm:px-8">
           <div className="flex items-center gap-3">
@@ -425,6 +571,8 @@ export default function C08Page() {
           </div>
         </div>
       </header>
+
+      <WorkflowProgress currentStep={workflowStep} />
 
       <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-8 sm:py-12">
         {stage !== "processed" && <section className="luma-intro no-print mb-10 px-5 py-7 text-white sm:px-8 sm:py-9">
@@ -588,7 +736,7 @@ export default function C08Page() {
 
             {reviewerDecision()}
 
-            <section aria-labelledby="rules-heading" className="mt-6 border border-border bg-surface px-5 py-6 sm:px-7">
+            <section aria-labelledby="rules-heading" className="scroll-reveal mt-6 border border-border bg-surface px-5 py-6 sm:px-7">
               <h2 id="rules-heading" className="font-display text-xl">Why this wording is safe</h2>
               <p className="mt-1 text-sm text-muted">
                 The exact rule text from the source record, checked against this report.
@@ -626,7 +774,7 @@ export default function C08Page() {
               </ol>
             </section>
 
-            <section aria-labelledby="stakes-heading" className="stakes-section">
+            <section aria-labelledby="stakes-heading" className="stakes-section scroll-reveal">
               <h2 id="stakes-heading" className="font-display text-xl">Why the exact wording matters</h2>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
                 This isn&apos;t a hypothetical risk. The American Red Cross raised $488M for Haiti
@@ -671,7 +819,7 @@ export default function C08Page() {
               </div>
             </section>
 
-            <nav aria-label="Report sections" className="report-nav no-print">
+            <nav aria-label="Report sections" className="report-nav no-print scroll-reveal">
               <a href="#cross-checks">Comparison detail</a>
               <a href="#claims">Supporting evidence</a>
               <a href="#excluded">Narrative context</a>
@@ -688,7 +836,7 @@ export default function C08Page() {
               )}
             </nav>
 
-            <section className="report-masthead">
+            <section className="report-masthead scroll-reveal">
               <div>
                 <span className="tag">source data</span>
                 <p className="mt-2 font-mono text-xs font-bold text-muted">{report.programme_id}</p>
@@ -709,7 +857,7 @@ export default function C08Page() {
               </div>
             </section>
 
-            <section id="cross-checks" aria-labelledby="cross-checks-heading" className="cross-check-section">
+            <section id="cross-checks" aria-labelledby="cross-checks-heading" className="cross-check-section scroll-reveal">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 id="cross-checks-heading" className="font-display text-3xl">Comparison detail</h2>
@@ -719,24 +867,10 @@ export default function C08Page() {
                 </div>
                 <span className="tag">comparison, not automatic truth</span>
               </div>
-              <div className="grid gap-4">
-                {report.source_cross_checks.map((check, index) => (
-                  <article key={`${check.source_evidence_ids.join("-")}-${index}`} className="cross-check-card">
-                    <div className="cross-check-status">
-                      <span aria-hidden="true">!</span>
-                      <strong>{check.status === "needs-review" ? "Review discrepancy" : "Unable to compare"}</strong>
-                    </div>
-                    <div>
-                      <p className="font-mono text-xs font-bold text-muted">{check.source_evidence_ids.join(" ↔ ")}</p>
-                      <p className="mt-3 text-sm font-semibold leading-6">{check.finding}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted"><strong>Next action:</strong> {check.action}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <CrossCheckList checks={report.source_cross_checks} />
             </section>
 
-            <section id="claims" aria-labelledby="claims-heading" className="py-8">
+            <section id="claims" aria-labelledby="claims-heading" className="scroll-reveal py-8">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 id="claims-heading" className="font-display text-3xl">Supporting evidence</h2>
@@ -759,6 +893,11 @@ export default function C08Page() {
                     <div className="claim-value">
                       <strong>{claim.value}</strong>
                       <span>{claim.unit}</span>
+                      {claim.confidence === "low" && (
+                        <span className="tag" title="Regex found more than one number in this record; an LLM picked the most likely count.">
+                          AI-assisted, low confidence
+                        </span>
+                      )}
                     </div>
                     <p className="claim-interpretation">{claim.interpretation}</p>
                     <dl className="claim-meta">
@@ -787,29 +926,18 @@ export default function C08Page() {
               </div>
             </section>
 
-            <section id="excluded" className="flagged-band" aria-labelledby="flagged-heading">
+            <section id="excluded" className="flagged-band scroll-reveal" aria-labelledby="flagged-heading">
               <div className="flagged-marker" aria-hidden="true">!</div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 id="flagged-heading" className="font-display text-2xl">Narrative evidence kept for review</h2>
                   <span className="tag">compared, not used as a numeric citation</span>
                 </div>
-                {report.flagged_evidence.map((item) => (
-                  <div key={item.evidence_id} className="mt-4">
-                    <p className="font-mono text-xs font-bold text-danger">{item.evidence_id} · {item.evidence_type}</p>
-                    <p className="mt-2 max-w-3xl text-sm leading-6">{item.reason}</p>
-                    <EvidenceReveal
-                      id={item.evidence_id}
-                      text={item.source_text}
-                      defaultOpen
-                      label="Read narrative record"
-                    />
-                  </div>
-                ))}
+                <FlaggedEvidenceList items={report.flagged_evidence} />
               </div>
             </section>
 
-            <section id="questions" className="py-8" aria-labelledby="partner-questions-heading">
+            <section id="questions" className="scroll-reveal py-8" aria-labelledby="partner-questions-heading">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 id="partner-questions-heading" className="font-display text-3xl">Questions for the partner</h2>
@@ -834,7 +962,7 @@ export default function C08Page() {
             </section>
 
             {report.history.length > 0 && (
-              <section id="history" className="mb-8" aria-labelledby="history-heading">
+              <section id="history" className="scroll-reveal mb-8" aria-labelledby="history-heading">
                 <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <h2 id="history-heading" className="font-display text-2xl">Review history</h2>

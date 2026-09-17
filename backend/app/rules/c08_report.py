@@ -1,4 +1,6 @@
+import os
 import re
+from functools import lru_cache
 from typing import Any, Literal, TypedDict
 
 
@@ -10,6 +12,7 @@ class NumericClaim(TypedDict):
     source_evidence_id: str
     source_text: str
     interpretation: str
+    confidence: Literal["high", "low"]
 
 
 class CompletionClaim(TypedDict):
@@ -45,10 +48,9 @@ def _narrative_reason(evidence_type: str) -> str:
     return f"record type '{evidence_type}' is not an authoritative source for any reported metric."
 
 
-# Numeric values are not parsed from evidence text (deferred, see TODOS.md).
-# This maps known evidence IDs to their known value so a record can still be
-# looked up safely; a record whose ID isn't here is omitted from
-# numeric_claims rather than crashing or fabricating a number.
+# Fallback map for evidence IDs whose text doesn't contain an extractable
+# number (kept so a known demo record never silently drops out of the report
+# if its wording changes). Primary path is _extract_number below.
 _KNOWN_VALUES: dict[str, int] = {
     "SHEET-A": 12,
     "PLAN-A": 20,
@@ -59,6 +61,55 @@ _KNOWN_VALUES: dict[str, int] = {
     "SHEET-BULK": 21,
     "PLAN-BULK": 24,
 }
+
+_NUMBER_RE = re.compile(r"\d+")
+
+
+def _regex_number(text: str) -> tuple[int | None, bool]:
+    """Deterministic first pass: exactly one digit-run in the text is a
+    confident read. Zero or 2+ digit-runs is ambiguous (regex can't tell
+    which number is the count) -- caller decides what to do next.
+
+    Returns (value, is_ambiguous).
+    """
+    matches = _NUMBER_RE.findall(text)
+    if len(matches) == 1:
+        return int(matches[0]), False
+    return None, True
+
+
+@lru_cache(maxsize=1)
+def _get_extraction_model() -> Any:
+    """Built lazily so importing this module never requires
+    DEEPSEEK_API_KEY (mirrors app/routers/c08_ask.py)."""
+    from langchain_openai import ChatOpenAI
+
+    return ChatOpenAI(
+        model="deepseek-chat",
+        base_url="https://api.deepseek.com/v1",
+        api_key=os.environ["DEEPSEEK_API_KEY"],
+        temperature=0,
+    )
+
+
+def _llm_extract_number(text: str) -> int | None:
+    """Last resort, used only when regex found zero or multiple numbers in
+    the text. Never raises -- any failure (missing key, network, bad
+    output) falls through to the caller's _KNOWN_VALUES/omit path. Any
+    value this returns is marked low-confidence by the caller; it is a
+    single model guess, not a verified read."""
+    try:
+        response = _get_extraction_model().invoke(
+            "This text describes a programme participant count. Reply with "
+            "ONLY the single integer count it reports, no words, no units. "
+            f"If genuinely ambiguous, give your best single guess.\n\nText: {text}"
+        )
+        content = response.content if isinstance(response.content, str) else str(response.content)
+        match = re.search(r"\d+", content)
+        return int(match.group()) if match else None
+    except Exception:  # noqa: BLE001 - degrade to fallback, never break the report
+        return None
+
 
 _NUMERIC_CLAIM_META: dict[str, dict[str, str]] = {
     "attendance": {"kind": "attendance", "interpretation": "attended at least one session"},
@@ -72,10 +123,16 @@ def _build_numeric_claims(evidence_list: list[dict[str, Any]], period: str) -> l
         meta = _NUMERIC_CLAIM_META.get(item["type"])
         if meta is None:
             continue
-        value = _KNOWN_VALUES.get(item["id"])
+        value, ambiguous = _regex_number(item["text"])
+        confidence: Literal["high", "low"] = "high"
+        if ambiguous:
+            confidence = "low"
+            value = _llm_extract_number(item["text"])
+            if value is None:
+                value = _KNOWN_VALUES.get(item["id"])
         if value is None:
-            # No known value for this record's ID -- omit rather than crash
-            # or fabricate. Value parsing from text is deferred (TODOS.md).
+            # No confident number, no LLM guess, no known fallback -- omit
+            # rather than crash or fabricate.
             continue
         claims.append(
             {
@@ -83,6 +140,7 @@ def _build_numeric_claims(evidence_list: list[dict[str, Any]], period: str) -> l
                 "value": value,
                 "unit": "participants",
                 "period": period,
+                "confidence": confidence,
                 "source_evidence_id": item["id"],
                 "source_text": item["text"],
                 "interpretation": meta["interpretation"],

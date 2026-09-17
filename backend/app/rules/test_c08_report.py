@@ -94,9 +94,7 @@ def test_narrative_without_a_number_is_still_cross_checked_as_unresolved():
 
 
 def test_claim_values_stay_consistent_with_their_source_text():
-    """build_report hardcodes 12/20 rather than parsing source_text. If
-    initial.json's evidence wording ever changes, this catches the drift
-    instead of silently shipping a stale number."""
+    """Authoritative values must remain grounded in their own source text."""
     data = load_source_data()
     evidence = {item["id"]: item["text"] for item in data["evidence"]}
     report = build_report("PRG-SYN", data)
@@ -209,10 +207,9 @@ def test_completion_statement_does_not_assert_non_submission_for_positive_assess
     assert "confirm" in completion_question["question"].lower()
 
 
-def test_duplicate_attendance_record_with_unknown_id_is_omitted_not_guessed():
-    """Bug 3 (documented current behavior, not fixed this round -- see
-    TODOS.md): a second attendance-type record under an ID with no known
-    value is safely omitted, never silently guessed or double-counted."""
+def test_unknown_attendance_record_is_extracted_from_unambiguous_text():
+    """Authoritative records no longer require a pre-registered ID when
+    their own text contains exactly one unambiguous number."""
     data = load_source_data()
     data["evidence"].append(
         {
@@ -225,8 +222,10 @@ def test_duplicate_attendance_record_with_unknown_id_is_omitted_not_guessed():
     report = build_report("PRG-SYN", data)
 
     attendance_claims = [c for c in report["numeric_claims"] if c["kind"] == "attendance"]
-    assert len(attendance_claims) == 1
-    assert attendance_claims[0]["source_evidence_id"] == "SHEET-A"
+    assert [(claim["source_evidence_id"], claim["value"], claim["confidence"]) for claim in attendance_claims] == [
+        ("SHEET-A", 12, "high"),
+        ("SHEET-B", 15, "high"),
+    ]
 
 
 def test_report_can_be_sent_back_with_a_reason_then_reapproved():
