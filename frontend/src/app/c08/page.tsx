@@ -83,6 +83,7 @@ const SUGGESTED_QUESTIONS = [
   "Did the programme succeed overall?",
   "What does the voice note tell us?",
   "Was the completion assessment submitted?",
+  "What should we ask the partner next?",
 ];
 
 function AskAboutReport({ programmeId, reportReady }: { programmeId: string; reportReady: boolean }) {
@@ -147,25 +148,10 @@ function AskAboutReport({ programmeId, reportReady }: { programmeId: string; rep
           )}
 
           {reportReady && exchanges.length === 0 && (
-            <>
-              <p className="ask-empty">
-                Grounded in the claim ledger, nothing else. It will say so, and name the
-                missing record, if the report doesn&rsquo;t contain the answer.
-              </p>
-              <div className="ask-suggestions">
-                {SUGGESTED_QUESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => void askText(suggestion)}
-                    disabled={asking}
-                    className="ask-suggestion"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </>
+            <p className="ask-empty">
+              Grounded in the claim ledger, nothing else. It will say so, and name the
+              missing record, if the report doesn&rsquo;t contain the answer.
+            </p>
           )}
 
           {exchanges.length > 0 && (
@@ -175,6 +161,22 @@ function AskAboutReport({ programmeId, reportReady }: { programmeId: string; rep
                   <p className="ask-question">{exchange.question}</p>
                   <p className="ask-answer">{exchange.answer}</p>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {reportReady && (
+            <div className="ask-suggestions">
+              {SUGGESTED_QUESTIONS.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => void askText(suggestion)}
+                  disabled={asking}
+                  className="ask-suggestion"
+                >
+                  {suggestion}
+                </button>
               ))}
             </div>
           )}
