@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type NumericClaim = {
   kind: "attendance" | "planned-capacity";
@@ -31,6 +31,12 @@ type Report = {
     source_text: string;
     disposition: string;
     reason: string;
+  }[];
+  source_cross_checks: {
+    status: "needs-review" | "unresolved";
+    source_evidence_ids: string[];
+    finding: string;
+    action: string;
   }[];
   partner_questions: {
     id: string;
@@ -72,7 +78,7 @@ function EvidenceReveal({
   );
 }
 
-type Stage = "idle" | "arrived" | "processed";
+type Stage = "idle" | "processed";
 
 export default function C08Page() {
   const [programmes, setProgrammes] = useState<ProgrammeSummary[]>([]);
@@ -84,6 +90,9 @@ export default function C08Page() {
   const [showSendBack, setShowSendBack] = useState(false);
   const [sendBackReason, setSendBackReason] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
+  const reportStartRef = useRef<HTMLElement>(null);
+  const attendanceClaim = report?.numeric_claims.find((claim) => claim.kind === "attendance");
+  const planClaim = report?.numeric_claims.find((claim) => claim.kind === "planned-capacity");
 
   useEffect(() => {
     fetch(`${API_URL}/programmes`)
@@ -91,6 +100,14 @@ export default function C08Page() {
       .then((data: ProgrammeSummary[]) => setProgrammes(data))
       .catch(() => setProgrammes([]));
   }, []);
+
+  useEffect(() => {
+    if (stage !== "processed") return;
+    const frame = window.requestAnimationFrame(() => {
+      reportStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [stage]);
 
   function resetForNewProgramme(nextId: string) {
     setProgrammeId(nextId);
@@ -111,7 +128,7 @@ export default function C08Page() {
       })
       .then((data) => {
         setReport(data);
-        setStage("arrived");
+        setStage("processed");
       })
       .catch(() =>
         setError("Report unavailable. Start the API on port 8461 and try again."),
@@ -176,25 +193,87 @@ export default function C08Page() {
     }
   }
 
+  function reviewerDecision() {
+    if (!report) return null;
+    return (
+      <section id="review" className="review-strip review-strip-primary">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-bold">Decision by {REVIEWER_NAME}</h2>
+            <span className="tag">simulated human action</span>
+          </div>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-muted">
+            Approve this cautious wording, or send it back with a reason. The underlying evidence and numbers never change.
+          </p>
+        </div>
+        {report.status === "approved" ? (
+          <div className="approval-confirmation">
+            Approved <span>simulated · status only</span>
+          </div>
+        ) : (
+          <div className="review-actions no-print">
+            <div className="review-buttons">
+              <button type="button" onClick={approve} disabled={working} className="approval-button">
+                {working ? "Recording action…" : "Approve wording"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSendBack((visible) => !visible)}
+                disabled={working}
+                className="send-back-button"
+                aria-expanded={showSendBack}
+                aria-controls="send-back-form"
+              >
+                Request evidence
+              </button>
+            </div>
+            {showSendBack && (
+              <form id="send-back-form" onSubmit={sendBack} className="send-back-form">
+                <label htmlFor="send-back-reason">What does the partner need to clarify or provide?</label>
+                <p className="send-back-helper">This reason becomes part of the visible review history.</p>
+                <div>
+                  <input
+                    id="send-back-reason"
+                    type="text"
+                    value={sendBackReason}
+                    onChange={(event) => setSendBackReason(event.target.value)}
+                    required
+                    disabled={working}
+                  />
+                  <button type="submit" disabled={working || !sendBackReason.trim()}>
+                    {working ? "Recording action…" : "Send request"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+      </section>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-paper text-ink">
-      <header className="no-print border-b border-ink bg-navy text-white">
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-5 py-4 sm:px-8">
+      <header className="luma-header no-print">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-5 py-3 sm:px-8">
           <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center border border-white/40 font-display text-xl">C08</span>
+            <span className="luma-mark" aria-hidden="true">
+              <i /><i /><i /><i />
+            </span>
             <div>
-              <p className="text-sm font-semibold">Evidence report desk</p>
-              <p className="text-xs text-slate-300">Claims, sources, reviewer status</p>
+              <p className="text-sm font-semibold tracking-[-0.01em]">Luma Evidence</p>
+              <p className="text-[0.68rem] text-muted">Clear claims. Traceable sources.</p>
             </div>
           </div>
-          <span className="border border-amber/70 bg-amber/10 px-2.5 py-1 text-xs font-semibold text-amber">
-            Synthetic exercise data
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="luma-context">C08</span>
+            <span className="luma-data-badge">Synthetic data</span>
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-8 sm:py-12">
-        <section className="no-print mb-10 border border-navy bg-navy px-5 py-7 text-white sm:px-8 sm:py-9">
+        {stage !== "processed" && <section className="luma-intro no-print mb-10 px-5 py-7 text-white sm:px-8 sm:py-9">
           <p className="inline-flex border border-white/40 bg-white/10 px-1.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.04em] text-white">
             the problem
           </p>
@@ -212,16 +291,16 @@ export default function C08Page() {
             API, this interface. Simulated: the exercise data, the named reviewer, and the
             approval action.
           </p>
-        </section>
+        </section>}
 
-        <section className="grid gap-6 border-b border-border pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+        {stage !== "processed" && <section className="grid gap-6 border-b border-border pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
             <p className="mb-3 text-sm font-semibold text-teal">C08 · participation report</p>
             <h1 className="max-w-3xl font-display text-4xl leading-[1.05] tracking-[-0.025em] sm:text-6xl">
-              Every claim keeps its receipt.
+              Turn mixed evidence into a report you can defend.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
-              Attendance, planned capacity, and missing completion evidence remain separate. Approval changes visibility status only, not the generated claims.
+              See the supported result first, then inspect the discrepancy and every source behind it.
             </p>
           </div>
           {report && (
@@ -245,7 +324,7 @@ export default function C08Page() {
               )}
             </div>
           )}
-        </section>
+        </section>}
 
         {error && (
           <p role="alert" className="mt-8 bg-danger-soft p-5 text-sm font-semibold text-danger">
@@ -296,71 +375,67 @@ export default function C08Page() {
               disabled={loadingEvidence}
               className="approval-button mt-5"
             >
-              {loadingEvidence ? "Reading evidence…" : "Simulate: evidence submitted for review"}
+              {loadingEvidence ? "Cross-checking evidence…" : "Simulate submission and review evidence"}
             </button>
           </section>
         )}
 
         {report && (
           <div className="evidence-reveal">
-            <section aria-labelledby="what-arrived-heading" className="mt-8 border border-border bg-slate-soft px-4 py-6 sm:px-7 sm:py-8">
-              <h2 id="what-arrived-heading" className="font-display text-3xl">What arrived</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-                Four source records arrived with details that disagree before processing.
-              </p>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4 md:gap-3">
-                {[
-                  {
-                    id: report.numeric_claims.find((claim) => claim.kind === "planned-capacity")?.source_evidence_id ?? "PLAN-A",
-                    text: report.numeric_claims.find((claim) => claim.kind === "planned-capacity")?.source_text ?? "",
-                    position: "md:-translate-y-1 md:-rotate-1",
-                  },
-                  {
-                    id: report.numeric_claims.find((claim) => claim.kind === "attendance")?.source_evidence_id ?? "SHEET-A",
-                    text: report.numeric_claims.find((claim) => claim.kind === "attendance")?.source_text ?? "",
-                    position: "md:translate-y-2 md:rotate-1",
-                  },
-                  {
-                    id: report.flagged_evidence[0]?.evidence_id ?? "VOICE-A",
-                    text: report.flagged_evidence[0]?.source_text ?? "",
-                    position: "md:translate-y-1 md:-rotate-2",
-                  },
-                  {
-                    id: report.completion_claim.source_evidence_id,
-                    text: report.completion_claim.source_text,
-                    position: "md:-translate-y-1 md:rotate-1",
-                  },
-                ].map((evidence) => (
-                  <article
-                    key={evidence.id}
-                    className={`min-w-0 border border-border bg-paper p-4 ${evidence.position}`}
-                  >
-                    <p className="font-mono text-xs font-bold text-muted">{evidence.id}</p>
-                    <p className="mt-3 text-sm leading-6">{evidence.text}</p>
-                  </article>
-                ))}
-              </div>
-
-              {stage === "arrived" && (
-                <button
-                  type="button"
-                  onClick={() => setStage("processed")}
-                  className="approval-button mt-7"
-                >
-                  Process this evidence
-                </button>
-              )}
-            </section>
-
             {stage === "processed" && (
               <>
-            <div className="border-b border-border pb-4 pt-10">
-              <h2 className="font-display text-2xl sm:text-3xl">What we can actually report</h2>
-            </div>
+            <section ref={reportStartRef} className="decision-summary" aria-labelledby="decision-summary-heading">
+              <div className="decision-summary-heading">
+                <div>
+                  <p className="tag">reviewer brief</p>
+                  <h2 id="decision-summary-heading" className="mt-2 font-display text-3xl sm:text-4xl">
+                    {attendanceClaim?.value ?? "unknown"} attended. {planClaim?.value ?? "unknown"} was the target. Completion is unknown.
+                  </h2>
+                </div>
+                <span className="decision-badge">One evidence gap remains</span>
+              </div>
+
+              <div className="decision-grid">
+                <article>
+                  <span className="decision-label decision-label-supported">Supported</span>
+                  <strong>{attendanceClaim?.value ?? "unknown"} people attended</strong>
+                  <p>Use this as the actual participation figure.</p>
+                  <small>Source: {attendanceClaim?.source_evidence_id ?? "No attendance record"}</small>
+                </article>
+                <article>
+                  <span className="decision-label decision-label-context">Target only</span>
+                  <strong>{planClaim?.value ?? "unknown"} people planned</strong>
+                  <p>Show this as capacity, not people trained or attended.</p>
+                  <small>Source: {planClaim?.source_evidence_id ?? "No plan record"}</small>
+                </article>
+                <article>
+                  <span className="decision-label decision-label-unknown">Not established</span>
+                  <strong>Completion cannot be reported</strong>
+                  <p>Attendance alone does not prove completion.</p>
+                  <small>Source: {report.completion_claim.source_evidence_id || "Assessment missing"}</small>
+                </article>
+              </div>
+
+              {report.source_cross_checks[0] && (
+                <div className="decision-discrepancy">
+                  <div><span aria-hidden="true">!</span><strong>How the mismatch is handled</strong></div>
+                  <p>{report.source_cross_checks[0].finding}</p>
+                  <p><strong>Recommended action:</strong> {report.source_cross_checks[0].action}</p>
+                </div>
+              )}
+
+              <div className="recommended-wording">
+                <span>Recommended report wording</span>
+                <p>
+                  “{attendanceClaim?.value ?? "No confirmed count of"} participants attended during {report.reporting_period}, against a planned capacity of {planClaim?.value ?? "an unstated number"}. Completion is not stated pending confirmation of the assessment record.”
+                </p>
+              </div>
+            </section>
+
+            {reviewerDecision()}
 
             <section aria-labelledby="rules-heading" className="mt-6 border border-border bg-surface px-5 py-6 sm:px-7">
-              <h2 id="rules-heading" className="font-display text-xl">Rules applied</h2>
+              <h2 id="rules-heading" className="font-display text-xl">Why this wording is safe</h2>
               <p className="mt-1 text-sm text-muted">
                 The exact rule text from the source record, checked against this report.
               </p>
@@ -398,11 +473,11 @@ export default function C08Page() {
             </section>
 
             <nav aria-label="Report sections" className="report-nav no-print">
-              <a href="#claims">Claims</a>
-              <a href="#excluded">Excluded</a>
+              <a href="#cross-checks">Comparison detail</a>
+              <a href="#claims">Supporting evidence</a>
+              <a href="#excluded">Narrative context</a>
               <a href="#questions">Questions</a>
               {report.history.length > 0 && <a href="#history">History</a>}
-              <a href="#review">Review</a>
             </nav>
 
             <section className="report-masthead">
@@ -426,11 +501,38 @@ export default function C08Page() {
               </div>
             </section>
 
+            <section id="cross-checks" aria-labelledby="cross-checks-heading" className="cross-check-section">
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 id="cross-checks-heading" className="font-display text-3xl">Comparison detail</h2>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
+                    Plan and attendance remain authoritative for different metrics. Narrative evidence is compared with both, kept visible, and routed to review when its meaning could change the report.
+                  </p>
+                </div>
+                <span className="tag">comparison, not automatic truth</span>
+              </div>
+              <div className="grid gap-4">
+                {report.source_cross_checks.map((check, index) => (
+                  <article key={`${check.source_evidence_ids.join("-")}-${index}`} className="cross-check-card">
+                    <div className="cross-check-status">
+                      <span aria-hidden="true">!</span>
+                      <strong>{check.status === "needs-review" ? "Review discrepancy" : "Unable to compare"}</strong>
+                    </div>
+                    <div>
+                      <p className="font-mono text-xs font-bold text-muted">{check.source_evidence_ids.join(" ↔ ")}</p>
+                      <p className="mt-3 text-sm font-semibold leading-6">{check.finding}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted"><strong>Next action:</strong> {check.action}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
             <section id="claims" aria-labelledby="claims-heading" className="py-8">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 id="claims-heading" className="font-display text-3xl">Claim ledger</h2>
-                  <p className="mt-1 text-sm text-muted">Select a source control to inspect the exact supplied text.</p>
+                  <h2 id="claims-heading" className="font-display text-3xl">Supporting evidence</h2>
+                  <p className="mt-1 text-sm text-muted">The audit trail behind the reviewer brief. Open any source to inspect the supplied text.</p>
                 </div>
                 <span className="tag">generated from initial.json</span>
               </div>
@@ -482,8 +584,8 @@ export default function C08Page() {
               <div className="flagged-marker" aria-hidden="true">!</div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 id="flagged-heading" className="font-display text-2xl">Excluded evidence</h2>
-                  <span className="tag">not a numeric citation</span>
+                  <h2 id="flagged-heading" className="font-display text-2xl">Narrative evidence kept for review</h2>
+                  <span className="tag">compared, not used as a numeric citation</span>
                 </div>
                 {report.flagged_evidence.map((item) => (
                   <div key={item.evidence_id} className="mt-4">
@@ -493,7 +595,7 @@ export default function C08Page() {
                       id={item.evidence_id}
                       text={item.source_text}
                       defaultOpen
-                      label="Read excluded record"
+                      label="Read narrative record"
                     />
                   </div>
                 ))}
@@ -549,60 +651,6 @@ export default function C08Page() {
                 </ol>
               </section>
             )}
-
-            <section id="review" className="review-strip">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-sm font-bold">Named reviewer</h2>
-                  <span className="tag">simulated human action</span>
-                </div>
-                <p className="mt-2 font-display text-2xl">{REVIEWER_NAME}</p>
-                <p className="mt-2 max-w-2xl text-xs leading-5 text-muted">
-                  Approval flips draft to approved. It does not verify truth, change a number, or infer completion.
-                </p>
-              </div>
-              {report.status === "approved" ? (
-                <div className="approval-confirmation">
-                  Approved <span>simulated · status only</span>
-                </div>
-              ) : (
-                <div className="review-actions no-print">
-                  <div className="review-buttons">
-                    <button type="button" onClick={approve} disabled={working} className="approval-button">
-                      {working ? "Recording action…" : "Approve report (simulation)"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowSendBack((visible) => !visible)}
-                      disabled={working}
-                      className="send-back-button"
-                      aria-expanded={showSendBack}
-                      aria-controls="send-back-form"
-                    >
-                      Send back for more evidence
-                    </button>
-                  </div>
-                  {showSendBack && (
-                    <form id="send-back-form" onSubmit={sendBack} className="send-back-form">
-                      <label htmlFor="send-back-reason">Reason</label>
-                      <div>
-                        <input
-                          id="send-back-reason"
-                          type="text"
-                          value={sendBackReason}
-                          onChange={(event) => setSendBackReason(event.target.value)}
-                          required
-                          disabled={working}
-                        />
-                        <button type="submit" disabled={working || !sendBackReason.trim()}>
-                          {working ? "Recording action…" : "Confirm send-back"}
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-              )}
-            </section>
 
             {report.reviewer_notes[0] && (
               <aside className="mt-5 bg-slate-soft px-4 py-3 text-sm leading-6">
