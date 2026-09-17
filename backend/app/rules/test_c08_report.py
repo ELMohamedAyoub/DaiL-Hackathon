@@ -36,6 +36,17 @@ def test_attendance_is_twelve_and_plan_capacity_is_not_attendance():
     assert claims["planned-capacity"]["interpretation"] == "target, not actual attendance"
 
 
+def test_report_surfaces_the_source_rules_verbatim():
+    """The rules array from initial.json was computed but never exposed in
+    the report. A judge/reviewer should be able to see the exact rule text
+    the engine is claiming to follow, not take it on faith."""
+    data = load_source_data()
+    report = build_report("PRG-SYN", data)
+
+    assert report["rules"] == data["rules"]
+    assert report["rules"]
+
+
 def test_completion_is_explicitly_unstated_when_assessment_is_missing():
     report = build_report("PRG-SYN", load_source_data())
 

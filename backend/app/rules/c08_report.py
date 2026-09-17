@@ -113,6 +113,7 @@ class C08Report(TypedDict):
     partner_questions: list[PartnerQuestion]
     reviewer_notes: list[dict[str, Any]]
     data_status: str
+    rules: list[str]
 
 
 def build_report(programme_id: str, data: dict[str, Any]) -> C08Report:
@@ -206,4 +207,5 @@ def build_report(programme_id: str, data: dict[str, Any]) -> C08Report:
         "partner_questions": partner_questions,
         "reviewer_notes": data["reviewer_notes"],
         "data_status": data["data_status"],
+        "rules": data.get("rules", []),
     }
