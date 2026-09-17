@@ -164,6 +164,12 @@ def test_completion_statement_does_not_assert_non_submission_for_positive_assess
         "9 of 12 participants completed the full programme."
     )
 
+    completion_question = next(
+        q for q in report["partner_questions"] if q["id"] == "Q-COMPLETION"
+    )
+    assert "please submit" not in completion_question["question"].lower()
+    assert "confirm" in completion_question["question"].lower()
+
 
 def test_duplicate_attendance_record_with_unknown_id_is_omitted_not_guessed():
     """Bug 3 (documented current behavior, not fixed this round -- see

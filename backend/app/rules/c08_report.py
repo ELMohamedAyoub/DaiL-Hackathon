@@ -154,12 +154,26 @@ def build_report(programme_id: str, data: dict[str, Any]) -> C08Report:
         if _is_narrative(item["type"])
     ]
     partner_questions: list[PartnerQuestion] = []
-    if completion_claim["value"] == "not stated":
+    if completion_claim["source_evidence_id"]:
+        # A record exists but its content is deliberately never read, so it
+        # cannot be known whether it already answers the completion
+        # question. Ask to confirm, not resubmit.
+        partner_questions.append(
+            {
+                "id": "Q-COMPLETION",
+                "question": (
+                    f"Confirm the completion status stated in "
+                    f"{completion_claim['source_evidence_id']} for {period}."
+                ),
+                "source_evidence_id": completion_claim["source_evidence_id"],
+            }
+        )
+    else:
         partner_questions.append(
             {
                 "id": "Q-COMPLETION",
                 "question": f"Please submit the completion assessment for {period}.",
-                "source_evidence_id": completion_claim["source_evidence_id"],
+                "source_evidence_id": "",
             }
         )
     for item in flagged_evidence:
