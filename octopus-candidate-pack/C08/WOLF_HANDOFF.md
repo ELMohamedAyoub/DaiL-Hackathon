@@ -1,51 +1,53 @@
 # Prototype handoff
 
-Case: C08. Prototype location: `/backend/app/rules/c08_report.py`, `/backend/app/routers/c08.py`, and `/frontend/src/app/c08`.
+Case: C08. Candidate/team: solo build, Octopus Day 2026-09-17. Prototype location: `backend/app/rules/c08_report.py`, `backend/app/routers/c08.py`, `frontend/src/app/c08`.
 
 ## The problem we validated
 
-A programme reviewer needs an evidence-linked report that distinguishes attendance from a capacity target and refuses to infer completion without an assessment. The supplied C08 synthetic evidence validates deterministic claim construction; performance with real records remains an assumption.
+Actor, painful moment and consequence: a programme reporting officer receives a plan target, an attendance sheet, and a coordinator's voice note that disagree, plus an assessment record that may or may not confirm completion. Under deadline pressure the officer is at risk of reporting whichever number looks best, or quietly treating a target as an actual, or claiming completion nobody verified. The consequence is a report a funder later cannot trust.
+
+Client evidence: the brief's own client quote (`octopus-candidate-pack/C08/brief.md`) and the supplied `initial.json` (PLAN-A target 20, SHEET-A attendance 12, VOICE-A self-correcting voice note, ASSESS-A assessment record). No live client interview took place: the Octopus harness (the event's chat-based client-interview channel) was unreachable for this session's entire working window. The brief's own supplied client dialogue and rule set were used as the interview answer instead, per the exercise's own allowance to use a labeled local simulation when a service is unavailable. This is disclosed, not hidden.
+
+What the client changed in our understanding: see `PAIN_FEEDBACK_CHANGES.md` for the full record. In short: the voice note was first excluded from the report and left out of any comparison; feedback (documented as the client reaction to that first cut) was that it should not feel ignored, so a deterministic cross-check was added that compares it against the plan and attendance without ever citing it as a number. A later pass found the multi-step reveal read as system ceremony rather than a decision aid, so the flow was cut to one click that leads with the reviewer's decision, not the report machinery.
+
+What remains an assumption: that real reporting officers reach a correct decision faster with this report than with the raw three documents, and that the deterministic claim-construction approach generalizes past the four evidence records supplied. See `DATA_READINESS.md` for exactly what would need to be tested to know.
 
 ## Open and demonstrate it
 
-Run the API and UI using `BUILD.md`, then open `http://localhost:4927/c08`.
+Exact run instructions and start state: `BUILD.md`. Backend `uv run uvicorn app.main:app --reload --env-file .env` on the port set in `backend/.env`, frontend `npm run dev` on `:4927`, open `http://localhost:4927/c08`. Selecting a case and reloading always returns to a clean, unapproved draft; server-side state resets on backend restart.
 
-- Select `PRG-SYN`, the official record, and trigger the labeled simulated submission. The reviewer brief appears immediately; the raw arrivals, rule checks, comparison detail, and source ledger remain inspectable below it.
-- Show that attendance is 12 participants for Exercise week 1 from SHEET-A, while 20 participants is separately labelled as a PLAN-A target.
-- Show the three-source cross-check: VOICE-A's reference to 20 matches PLAN-A's target and differs from SHEET-A's attendance of 12. It stays visible and triggers review, but remains non-authoritative and never becomes a numeric citation.
-- Show completion as "not stated, see source assessment record". The claim never characterizes the assessment's content, so it stays true whether ASSESS-A says nothing was submitted or reports something else entirely.
-- Show the deterministic partner questions tied to the assessment record and excluded narrative evidence.
-- Request evidence with a reason, then approve the wording. Show that the current reviewer state changes and both actions remain in the in-memory review-history timeline while the generated claims stay unchanged.
-- Use `Export report (print / save as PDF)` to open the browser print view.
-- Return to the case selector and point out `PRG-NOASSESS` and `PRG-DOUBLE`. Both are demo-only cases, stored separately to prove the same rules handle no assessment record and two ambiguous narrative records.
-- Failure path: stop the API and reload; the UI gives a specific recovery instruction.
+Ordinary path: select `PRG-SYN` (the official record), trigger the labeled simulated submission. The reviewer brief appears immediately, leading with "12 attended, 20 was the target, completion is unknown." Attendance (SHEET-A) and capacity target (PLAN-A) are shown as separate claims, each citing its source record.
+
+Changed-information path: the voice note (VOICE-A) mentions 20, matching the plan target and differing from attendance. The three-source cross-check shows this comparison explicitly, flagged `needs-review`, and stays non-authoritative: it can corroborate a value or expose a discrepancy, but it never becomes a numeric citation. The reviewer can request more evidence with a required reason (a real audit/RFI pattern) or approve the wording; either action appends to a visible, append-only review-history timeline without altering any generated claim.
+
+Failure or uncertainty path: completion is rendered as an explicit "not stated, see source assessment record", never inferred from the assessment's content and never a blank. Switch to the `PRG-NOASSESS` demo case to see the same logic when no assessment record exists at all, and `PRG-DOUBLE` to see two separate ambiguous narrative records both correctly excluded by evidence type, not by a hardcoded record ID. Stopping the API and reloading gives a specific recovery instruction rather than a silent failure.
 
 ## What is real
 
 | Component | Implemented or simulated | Evidence and limitation |
 | --- | --- | --- |
-| Input | Simulated | Unchanged synthetic `initial.json` is the official source; two separate `demo-cases/` files exercise additional paths. |
-| Report rules | Implemented | Pure deterministic construction with explicit evidence IDs. |
-| Evidence inspection | Implemented | Exact supplied text is available from every claim card. |
-| Partner questions | Implemented | Template-derived questions use completion and excluded-evidence state; no LLM is involved. |
-| Human review | Simulated | Named reviewer approve/send-back actions change in-memory state only and append to visible history. |
-| Export | Implemented | The UI invokes browser print/save as PDF; no PDF service or publication occurs. |
-| Persistence and publication | Not implemented | Restarting the API clears reviewer state and history; no report is externally published. |
+| Input and event trigger | Simulated | The "simulate submission" button loads unchanged synthetic `initial.json` (official) or a clearly labeled `demo-cases/` file; no real evidence intake exists. |
+| Retrieval / reasoning | Implemented | Pure deterministic Python: evidence classified by type, narrative records excluded by type not by ID, numeric values from a fixed known-ID lookup (never parsed from free text), a rules-derived partner-question generator, and a narrative-vs-register number-mention cross-check. No LLM anywhere in this path; deliberately evaluated and rejected (`TODOS.md`, `PRODUCT.md`). |
+| Human review | Simulated | Named reviewer approve/send-back actions change in-memory status only, never a generated claim, and append to a visible history. No real identity/auth. |
+| External action | Not implemented | Export uses the browser's native print/save-as-PDF; no email, ticket, or partner-facing system is contacted. |
+| Persistence and history | Partial | Review history is append-only within a running process but held in memory; restarting the API clears it. No durable store. |
 
 ## Next client validation
 
-Test a consented, redacted real reporting pack with two programme reviewers. Success means both trace every numeric claim to the same record, distinguish capacity from attendance, and decline to state completion when the assessment is absent. Evaluation owner: client programme-assurance lead.
+One real case we would test: a consented, redacted real reporting pack (plan, attendance register, narrative note, completion assessment) reviewed independently by two programme officers, per the fuller 8-12-pack plan in `DATA_READINESS.md`. What counts as success: both reviewers independently identify the same supported claims and sources, both decline to state completion when the assessment is absent, and both agree the generated partner questions are the right ones to send. Who evaluates it: client programme-assurance lead, with the Wolf integration lead present to capture schema gaps.
 
 ## Wolf work
 
-Next integration: a client-controlled evidence ingestion adapter that emits immutable evidence IDs, exact source spans, evidence types, reporting periods, and access-controlled file references.
+Required integration and permission: a client-controlled evidence-ingestion adapter that emits immutable evidence IDs, exact source spans, evidence types, reporting periods, and access-controlled file references. Requires a consented redacted test pack, read-only document-store credentials, reporting schema documentation, a named-reviewer identity provider sandbox, and a non-production report store.
 
-Access requirements: a consented redacted test pack, read-only document-store credentials, reporting schema documentation, named-reviewer identity provider sandbox, and a non-production report store.
+Data boundary and model processing location: source documents stay in the client-controlled environment; only required claims, immutable references, and source spans reach the report service. No model or service outside that boundary ever sees raw source documents. Ambiguous or missing evidence must remain visible and must never be coerced into a hard number.
 
-Data boundary: source documents remain client-controlled; only required claims, immutable references, and source spans reach the report service. Ambiguous or missing evidence must remain visible and must never be coerced into a hard number.
+Failure/recovery plan: if ingestion cannot classify a record's evidence type, it is preserved and routed to manual classification rather than dropped or guessed. If a numeric value cannot be safely extracted, the claim is omitted, never fabricated, matching current behavior for unknown evidence IDs.
 
-Owner: Wolf integration lead. Monitoring owner: client programme-assurance lead.
+Monitoring owner: client programme-assurance lead.
 
-Open risks: duplicate participant resolution, period misalignment, altered source records, transcript ambiguity, assessment-version drift, unauthorised approval, and missing durable audit history.
+Scope and effort drivers: the width of the evidence-type taxonomy the client actually produces, whether structured numeric extraction (not present today) is in scope, and whether multi-programme/multi-period isolation is needed for the client's real portfolio size. No invented price or delivery commitment.
 
-Next action: Wolf integration lead maps the client evidence schema to the report contract and schedules the two-reviewer validation with the programme-assurance owner.
+Open risks: duplicate participant resolution across sources, period misalignment, altered or superseded source records, transcript negation/correction (documented gap, `TODOS.md`), assessment-version drift, unauthorised approval (no real auth in this prototype), and the current in-memory-only history losing state on restart.
+
+Next action and owner: Wolf integration lead maps the client's real evidence schema to this report contract and schedules the two-reviewer validation above with the programme-assurance owner.
