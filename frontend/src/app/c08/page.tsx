@@ -535,6 +535,51 @@ export default function C08Page() {
               </ol>
             </section>
 
+            <section aria-labelledby="stakes-heading" className="stakes-section">
+              <h2 id="stakes-heading" className="font-display text-xl">Why the exact wording matters</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
+                This isn&apos;t a hypothetical risk. The American Red Cross raised $488M for Haiti
+                earthquake relief and reported progress toward 130,000 homes; an investigation
+                later found 6 had been built. In 2025 and 2026, AI-generated reports at Deloitte
+                and EY were publicly withdrawn after containing fabricated content. A report that
+                turns a target into an actual, or infers completion from attendance, is the same
+                failure mode at a smaller scale.
+              </p>
+
+              <div className="stakes-compare">
+                <article className="stakes-card stakes-card-bad">
+                  <span className="tag">illustrative, not a real tool&apos;s output</span>
+                  <h3>What a naive AI summarizer would write</h3>
+                  <p>
+                    &ldquo;20 participants completed the Exercise week 1 programme, meeting the
+                    planned target.&rdquo;
+                  </p>
+                  <ul>
+                    <li>Turns the PLAN-A target into an attendance figure</li>
+                    <li>Infers completion from participation alone</li>
+                    <li>No source cited for either claim</li>
+                  </ul>
+                </article>
+                <article className="stakes-card stakes-card-good">
+                  <span className="tag">what this report actually says</span>
+                  <h3>This report</h3>
+                  <p>
+                    &ldquo;{attendanceClaim?.value ?? "No confirmed count of"} people attended{" "}
+                    {report.reporting_period} ({attendanceClaim?.source_evidence_id ?? "no record"}
+                    ). {planClaim?.value ?? "An unstated number"} was the planned capacity, not
+                    attendance ({planClaim?.source_evidence_id ?? "no record"}). Completion is not
+                    stated ({report.completion_claim.source_evidence_id || "no assessment record"}
+                    ).&rdquo;
+                  </p>
+                  <ul>
+                    <li>Every number traces to one evidence record</li>
+                    <li>Target and actual stay separate, always</li>
+                    <li>Absence is stated, never filled in</li>
+                  </ul>
+                </article>
+              </div>
+            </section>
+
             <nav aria-label="Report sections" className="report-nav no-print">
               <a href="#cross-checks">Comparison detail</a>
               <a href="#claims">Supporting evidence</a>

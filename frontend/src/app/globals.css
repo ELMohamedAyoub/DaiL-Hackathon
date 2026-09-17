@@ -624,3 +624,64 @@ main section.bg-surface,
 @media (max-width: 639px) {
   .ask-form { flex-direction: column; align-items: stretch; }
 }
+
+.stakes-section {
+  margin-top: 1.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1.15rem;
+  background: var(--color-surface);
+  padding: 1.5rem 1.75rem;
+}
+.stakes-compare {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.stakes-card {
+  border-radius: 1rem;
+  padding: 1.25rem 1.4rem;
+}
+.stakes-card h3 {
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+.stakes-card p {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  font-style: italic;
+}
+.stakes-card ul {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+.stakes-card ul li {
+  padding-left: 1rem;
+  position: relative;
+}
+.stakes-card-bad {
+  background: var(--color-danger-soft);
+}
+.stakes-card-bad ul li::before {
+  content: "✕";
+  position: absolute;
+  left: 0;
+  color: var(--color-danger);
+}
+.stakes-card-good {
+  background: var(--color-teal-soft);
+}
+.stakes-card-good ul li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--color-teal);
+}
+
+@media (min-width: 800px) {
+  .stakes-compare { grid-template-columns: 1fr 1fr; }
+}
