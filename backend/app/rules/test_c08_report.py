@@ -6,6 +6,7 @@ from app.routers.c08 import (
     ApprovalRequest,
     SendBackRequest,
     _approvals,
+    _history,
     _sendbacks,
     approve_report,
     send_back_report,
@@ -219,6 +220,10 @@ def test_report_can_be_sent_back_with_a_reason_then_reapproved():
         assert approved["status"] == "approved"
         assert approved["approval"]["reviewer_name"] == "Maya El Idrissi"
         assert "send_back" not in approved
+
+        events = [entry["event"] for entry in approved["history"]]
+        assert events == ["sent-back", "approved"]
     finally:
         _approvals.pop(programme_id, None)
         _sendbacks.pop(programme_id, None)
+        _history.pop(programme_id, None)

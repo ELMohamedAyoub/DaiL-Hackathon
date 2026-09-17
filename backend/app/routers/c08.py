@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -19,6 +20,20 @@ SOURCE_DATA = (
 )
 _approvals: dict[str, str] = {}
 _sendbacks: dict[str, dict[str, str]] = {}
+_history: dict[str, list[dict[str, str]]] = {}
+
+
+def _record_history(programme_id: str, event: str, reviewer_name: str, detail: str = "") -> None:
+    """Append-only audit trail. Never rewritten, only added to, so the
+    full sequence of reviewer actions stays visible even after a later
+    action changes the current status."""
+    entry = {
+        "event": event,
+        "reviewer_name": reviewer_name,
+        "detail": detail,
+        "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    _history.setdefault(programme_id, []).append(entry)
 
 
 class ApprovalRequest(BaseModel):
@@ -69,6 +84,7 @@ def current_report(programme_id: str) -> dict[str, Any]:
             "reason": send_back["reason"],
             "simulated": True,
         }
+    report["history"] = _history.get(programme_id, [])
     return report
 
 
@@ -91,6 +107,7 @@ async def approve_report(
 
     _approvals[programme_id] = approval.reviewer_name
     _sendbacks.pop(programme_id, None)
+    _record_history(programme_id, "approved", approval.reviewer_name)
     return current_report(programme_id)
 
 
@@ -108,4 +125,5 @@ async def send_back_report(
         "reason": send_back.reason,
     }
     _approvals.pop(programme_id, None)
+    _record_history(programme_id, "sent-back", send_back.reviewer_name, send_back.reason)
     return current_report(programme_id)
