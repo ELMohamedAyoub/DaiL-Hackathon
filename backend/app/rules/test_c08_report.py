@@ -43,3 +43,16 @@ def test_voice_note_is_flagged_and_never_cites_a_hard_number():
     )
     assert report["flagged_evidence"][0]["evidence_id"] == "VOICE-A"
     assert report["flagged_evidence"][0]["disposition"] == "excluded-from-numeric-claims"
+
+
+def test_claim_values_stay_consistent_with_their_source_text():
+    """build_report hardcodes 12/20 rather than parsing source_text. If
+    initial.json's evidence wording ever changes, this catches the drift
+    instead of silently shipping a stale number."""
+    data = load_source_data()
+    evidence = {item["id"]: item["text"] for item in data["evidence"]}
+    report = build_report("PRG-SYN", data)
+    claims = {claim["kind"]: claim for claim in report["numeric_claims"]}
+
+    assert str(claims["attendance"]["value"]) in evidence["SHEET-A"]
+    assert str(claims["planned-capacity"]["value"]) in evidence["PLAN-A"]
