@@ -14,8 +14,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Octopus Day",
-  description: "Octopus Day hackathon build",
+  title: "C07 Evidence Desk",
+  description: "Synthetic review-readiness exercise prototype",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

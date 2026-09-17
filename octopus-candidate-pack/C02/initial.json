@@ -1,0 +1,52 @@
+{
+  "case_id": "C02",
+  "data_status": "SYNTHETIC EXERCISE DATA; not real client, country, programme or participant data",
+  "clock": "Exercise-local time only; no real event date implied",
+  "jobs": [
+    {
+      "id": "W-1",
+      "stage": "awaiting parts",
+      "part_receipt": "received",
+      "receipt_ref": "R-1",
+      "next_owner": "parts coordinator"
+    },
+    {
+      "id": "W-2",
+      "stage": "repair paused",
+      "part_receipt": "not required",
+      "customer_approval": "missing",
+      "next_owner": "service adviser"
+    },
+    {
+      "id": "W-3",
+      "stage": "quality check",
+      "device_state": "offline",
+      "next_owner": "workshop controller"
+    },
+    {
+      "id": "W-4",
+      "stage": "ready",
+      "customer_approval": "received",
+      "next_owner": "collection desk"
+    }
+  ],
+  "events": [
+    {
+      "id": "R-1",
+      "job_id": "W-1",
+      "event": "part scan",
+      "time": "08:40"
+    },
+    {
+      "id": "E-2",
+      "job_id": "W-2",
+      "event": "approval request prepared",
+      "time": "08:50"
+    }
+  ],
+  "rules": [
+    "Task recommendations need a source record and owner.",
+    "No employee performance score may be inferred from these events.",
+    "Writing a status requires reviewer approval."
+  ]
+}

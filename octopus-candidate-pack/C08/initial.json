@@ -1,0 +1,43 @@
+{
+  "case_id": "C08",
+  "data_status": "SYNTHETIC EXERCISE DATA; not real client, country, programme or participant data",
+  "clock": "Exercise-local time only; no real event date implied",
+  "programme": {
+    "id": "PRG-SYN",
+    "name": "Fictional workshop pilot",
+    "reporting_period": "Exercise week 1"
+  },
+  "evidence": [
+    {
+      "id": "PLAN-A",
+      "type": "plan",
+      "text": "Plan capacity: 20 participants. This is a target, not attendance."
+    },
+    {
+      "id": "SHEET-A",
+      "type": "attendance",
+      "text": "12 unique participants attended at least one session."
+    },
+    {
+      "id": "VOICE-A",
+      "type": "voice-note-transcript",
+      "text": "We trained twenty people this week. I mean the programme was planned for twenty; I need to check completion."
+    },
+    {
+      "id": "ASSESS-A",
+      "type": "assessment",
+      "text": "No completion assessment has been submitted."
+    }
+  ],
+  "reviewer_notes": [
+    {
+      "id": "NOTE-A",
+      "text": "Use attended for the attendance figure. Do not report completed without the assessment."
+    }
+  ],
+  "rules": [
+    "Every numeric claim states unit, period and evidence record.",
+    "A draft report stays draft until a reviewer approves it.",
+    "No inference about outcomes from participation alone."
+  ]
+}

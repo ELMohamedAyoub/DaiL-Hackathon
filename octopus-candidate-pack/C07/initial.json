@@ -1,0 +1,67 @@
+{
+  "case_id": "C07",
+  "data_status": "SYNTHETIC EXERCISE DATA; not real client, country, programme or participant data",
+  "clock": "Exercise-local time only; no real event date implied",
+  "applications": [
+    {
+      "id": "APP-1",
+      "organisation": "Learning Workshop A",
+      "requested_activity": "Vocational pilot"
+    },
+    {
+      "id": "APP-2",
+      "organisation": "Community Workshop B",
+      "requested_activity": "Trainer development"
+    }
+  ],
+  "documents": [
+    {
+      "id": "REG-1",
+      "application": "APP-1",
+      "type": "registration",
+      "organisation": "Learning Workshop A",
+      "status": "present"
+    },
+    {
+      "id": "PLAN-1",
+      "application": "APP-1",
+      "type": "activity-plan",
+      "status": "present"
+    },
+    {
+      "id": "CONSENT-1",
+      "application": "APP-1",
+      "type": "responsible-person-signoff",
+      "status": "missing"
+    },
+    {
+      "id": "REG-2",
+      "application": "APP-2",
+      "type": "registration",
+      "organisation": "Community Workshop C",
+      "status": "present"
+    }
+  ],
+  "exercise_rules": [
+    {
+      "id": "RULE-1",
+      "text": "Review-ready requires a registration record, activity plan and named responsible-person signoff."
+    },
+    {
+      "id": "RULE-2",
+      "text": "A name mismatch requires clarification, never automatic rejection."
+    },
+    {
+      "id": "RULE-3",
+      "text": "A human reviewer alone decides the application."
+    }
+  ],
+  "reviewer_notes": [
+    {
+      "id": "NOTE-1",
+      "application": "APP-1",
+      "text": "Keep the supplied organisation spelling. Earlier extraction shortened it incorrectly.",
+      "locked_correction": true
+    }
+  ]
+}

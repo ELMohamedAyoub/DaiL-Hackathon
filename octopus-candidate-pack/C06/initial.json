@@ -1,0 +1,66 @@
+{
+  "case_id": "C06",
+  "data_status": "SYNTHETIC EXERCISE DATA; not real client, country, programme or participant data",
+  "clock": "Exercise-local time only; no real event date implied",
+  "pilot": {
+    "setting": "Fictional Morocco automotive training pilot",
+    "employer_commitment": "Review one task assessment; no job guarantee"
+  },
+  "tasks": [
+    {
+      "id": "TASK-1",
+      "name": "Record a parts delivery discrepancy",
+      "required_skills": [
+        "read delivery note",
+        "distinguish received and accepted quantities",
+        "escalate damage"
+      ]
+    },
+    {
+      "id": "TASK-2",
+      "name": "Explain a service delay to a customer",
+      "required_skills": [
+        "find source status",
+        "avoid unconfirmed promises",
+        "prepare callback"
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "id": "MOD-1",
+      "name": "Parts intake basics",
+      "covers": [
+        "read delivery note"
+      ],
+      "language": "French",
+      "duration_minutes": 25
+    },
+    {
+      "id": "MOD-2",
+      "name": "Customer communication practice",
+      "covers": [
+        "prepare callback"
+      ],
+      "language": "English",
+      "duration_minutes": 20
+    }
+  ],
+  "learner_profile": {
+    "id": "GROUP-SYN",
+    "preferred_learning_language": "French",
+    "available_session_minutes": 30,
+    "connectivity": "intermittent"
+  },
+  "public_context": [
+    {
+      "url": "https://aspyee.org/africa-critical-skills-bank/",
+      "summary": "An existing AUDA-NEPAD platform supports workforce and training planning."
+    }
+  ],
+  "rules": [
+    "Do not infer competence from course attendance.",
+    "No claim of official qualification or guaranteed employment.",
+    "Use the employer to validate task relevance."
+  ]
+}

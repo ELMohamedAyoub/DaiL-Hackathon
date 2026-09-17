@@ -1,0 +1,246 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+type NumericClaim = {
+  kind: "attendance" | "planned-capacity";
+  value: number;
+  unit: string;
+  period: string;
+  source_evidence_id: string;
+  source_text: string;
+  interpretation: string;
+};
+
+type Report = {
+  programme_id: string;
+  programme_name: string;
+  reporting_period: string;
+  status: "draft" | "approved";
+  numeric_claims: NumericClaim[];
+  completion_claim: {
+    value: "not stated";
+    statement: string;
+    period: string;
+    source_evidence_id: string;
+    source_text: string;
+  };
+  flagged_evidence: {
+    evidence_id: string;
+    evidence_type: string;
+    source_text: string;
+    disposition: string;
+    reason: string;
+  }[];
+  reviewer_notes: { id: string; text: string }[];
+  data_status: string;
+  approval?: { reviewer_name: string; simulated: true; effect: string };
+};
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8461";
+const PROGRAMME_ID = "PRG-SYN";
+const REVIEWER_NAME = "Maya El Idrissi";
+
+function EvidenceReveal({ id, text }: { id: string; text: string }) {
+  return (
+    <details className="evidence-source group">
+      <summary>Reveal raw source text</summary>
+      <blockquote>
+        “{text}”
+        <cite>{id} · synthetic source record</cite>
+      </blockquote>
+    </details>
+  );
+}
+
+export default function C08Page() {
+  const [report, setReport] = useState<Report | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_URL}/programmes/${PROGRAMME_ID}/report`)
+      .then((response) => {
+        if (!response.ok) throw new Error();
+        return response.json() as Promise<Report>;
+      })
+      .then(setReport)
+      .catch(() =>
+        setError("Report unavailable. Start the API on port 8461 and reload this page."),
+      );
+  }, []);
+
+  async function approve() {
+    setWorking(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `${API_URL}/programmes/${PROGRAMME_ID}/report/approve`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reviewer_name: REVIEWER_NAME,
+            simulated: true,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error();
+      setReport((await response.json()) as Report);
+    } catch {
+      setError("Simulated approval failed. Confirm the API is running, then try again.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-paper text-ink">
+      <header className="border-b border-ink bg-navy text-white">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-5 py-4 sm:px-8">
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center border border-white/40 font-display text-xl">C08</span>
+            <div>
+              <p className="text-sm font-semibold">Evidence report desk</p>
+              <p className="text-xs text-slate-300">Claims, sources, reviewer status</p>
+            </div>
+          </div>
+          <span className="border border-amber/70 bg-amber/10 px-2.5 py-1 text-xs font-semibold text-amber">
+            Synthetic exercise data
+          </span>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-8 sm:py-12">
+        <section className="grid gap-6 border-b border-border pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <p className="mb-3 text-sm font-semibold text-teal">C08 · participation report</p>
+            <h1 className="max-w-3xl font-display text-4xl leading-[1.05] tracking-[-0.025em] sm:text-6xl">
+              Every claim keeps its receipt.
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
+              Attendance, planned capacity, and missing completion evidence remain separate. Approval changes visibility status only—not the generated claims.
+            </p>
+          </div>
+          {report && (
+            <div className={`state-stamp report-status state-report-${report.status}`}>
+              <span>Report status</span>
+              <strong>{report.status}</strong>
+              <small>{report.status === "draft" ? "Awaiting named reviewer" : "Simulated human approval"}</small>
+            </div>
+          )}
+        </section>
+
+        {error && <p role="alert" className="mt-8 border-l-4 border-danger bg-danger-soft p-5 text-sm">{error}</p>}
+
+        {!report && !error && <p className="mt-8 animate-pulse text-sm text-muted">Loading evidence-linked report…</p>}
+
+        {report && (
+          <div className="evidence-reveal">
+            <section className="report-masthead">
+              <div>
+                <span className="tag">source data</span>
+                <p className="mt-2 font-mono text-xs font-bold text-muted">{report.programme_id}</p>
+                <h2 className="mt-1 font-display text-3xl sm:text-4xl">{report.programme_name}</h2>
+              </div>
+              <div className="report-period">
+                <span>Reporting period</span>
+                <strong>{report.reporting_period}</strong>
+              </div>
+            </section>
+
+            <section aria-labelledby="claims-heading" className="py-8">
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 id="claims-heading" className="font-display text-3xl">Claim ledger</h2>
+                  <p className="mt-1 text-sm text-muted">Select a source control to inspect the exact supplied text.</p>
+                </div>
+                <span className="tag">generated from initial.json</span>
+              </div>
+
+              <div className="claim-grid">
+                {report.numeric_claims.map((claim) => (
+                  <article key={claim.kind} className={`claim-card claim-${claim.kind}`}>
+                    <div className="claim-card-topline">
+                      <span>{claim.kind === "attendance" ? "Attendance" : "Planned capacity"}</span>
+                      <span className="font-mono">{claim.source_evidence_id}</span>
+                    </div>
+                    <div className="claim-value">
+                      <strong>{claim.value}</strong>
+                      <span>{claim.unit}</span>
+                    </div>
+                    <p className="claim-interpretation">{claim.interpretation}</p>
+                    <dl className="claim-meta">
+                      <div><dt>Period</dt><dd>{claim.period}</dd></div>
+                      <div><dt>Source</dt><dd>{claim.source_evidence_id}</dd></div>
+                    </dl>
+                    <EvidenceReveal id={claim.source_evidence_id} text={claim.source_text} />
+                  </article>
+                ))}
+
+                <article className="claim-card claim-completion">
+                  <div className="claim-card-topline">
+                    <span>Completion</span>
+                    <span className="font-mono">{report.completion_claim.source_evidence_id}</span>
+                  </div>
+                  <div className="completion-state">Not stated</div>
+                  <p className="claim-interpretation">{report.completion_claim.statement}</p>
+                  <dl className="claim-meta">
+                    <div><dt>Period</dt><dd>{report.completion_claim.period}</dd></div>
+                    <div><dt>Source</dt><dd>{report.completion_claim.source_evidence_id}</dd></div>
+                  </dl>
+                  <EvidenceReveal id={report.completion_claim.source_evidence_id} text={report.completion_claim.source_text} />
+                </article>
+              </div>
+            </section>
+
+            <section className="flagged-band" aria-labelledby="flagged-heading">
+              <div className="flagged-marker" aria-hidden="true">!</div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 id="flagged-heading" className="font-display text-2xl">Excluded evidence</h2>
+                  <span className="tag">not a numeric citation</span>
+                </div>
+                {report.flagged_evidence.map((item) => (
+                  <div key={item.evidence_id} className="mt-4">
+                    <p className="font-mono text-xs font-bold text-danger">{item.evidence_id} · {item.evidence_type}</p>
+                    <p className="mt-2 max-w-3xl text-sm leading-6">{item.reason}</p>
+                    <EvidenceReveal id={item.evidence_id} text={item.source_text} />
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="review-strip">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm font-bold">Named reviewer</h2>
+                  <span className="tag">simulated human action</span>
+                </div>
+                <p className="mt-2 font-display text-2xl">{REVIEWER_NAME}</p>
+                <p className="mt-2 max-w-2xl text-xs leading-5 text-muted">
+                  Approval flips draft to approved. It does not verify truth, change a number, or infer completion.
+                </p>
+              </div>
+              {report.status === "approved" ? (
+                <div className="approval-confirmation">
+                  Approved <span>simulated · status only</span>
+                </div>
+              ) : (
+                <button type="button" onClick={approve} disabled={working} className="approval-button">
+                  {working ? "Recording approval…" : "Approve report (simulation)"}
+                </button>
+              )}
+            </section>
+
+            <aside className="mt-5 border-l-2 border-navy bg-slate-soft px-4 py-3 text-sm leading-6">
+              <span className="mr-2 font-mono text-xs font-bold">{report.reviewer_notes[0].id}</span>
+              <span className="tag mr-2">locked reviewer note</span>
+              {report.reviewer_notes[0].text}
+            </aside>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
