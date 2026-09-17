@@ -21,6 +21,7 @@ _PROGRAMME_SOURCES: dict[str, Path] = {
     "PRG-SYN": C08_DIR / "initial.json",
     "PRG-NOASSESS": C08_DIR / "demo-cases" / "PRG-NOASSESS.json",
     "PRG-DOUBLE": C08_DIR / "demo-cases" / "PRG-DOUBLE.json",
+    "PRG-BULK": C08_DIR / "demo-cases" / "PRG-BULK.json",
 }
 
 PROGRAMME_SUMMARIES = [
@@ -37,6 +38,11 @@ PROGRAMME_SUMMARIES = [
     {
         "id": "PRG-DOUBLE",
         "label": "Demo case: two separate ambiguous narrative records",
+        "official": False,
+    },
+    {
+        "id": "PRG-BULK",
+        "label": "Demo case: a full 12-week programme, 17 records, 8 evidence types",
         "official": False,
     },
 ]

@@ -56,6 +56,8 @@ _KNOWN_VALUES: dict[str, int] = {
     "PLAN-N": 30,
     "SHEET-D": 16,
     "PLAN-D": 18,
+    "SHEET-BULK": 21,
+    "PLAN-BULK": 24,
 }
 
 _NUMERIC_CLAIM_META: dict[str, dict[str, str]] = {
