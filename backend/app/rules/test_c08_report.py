@@ -80,6 +80,46 @@ def test_partner_questions_reference_only_source_evidence():
     assert question_evidence_ids <= source_evidence_ids
 
 
+def test_a_second_narrative_record_under_a_different_id_is_also_excluded():
+    """Exclusion must be driven by evidence TYPE, not the literal ID 'VOICE-A'.
+    A second narrative record with an unrelated ID proves the rule is general."""
+    data = load_source_data()
+    data["evidence"].append(
+        {
+            "id": "FIELD-NOTE-Z",
+            "type": "field-note",
+            "text": "Coordinator mentioned turnout was strong this cycle.",
+        }
+    )
+    report = build_report("PRG-SYN", data)
+
+    flagged_ids = {item["evidence_id"] for item in report["flagged_evidence"]}
+    assert "FIELD-NOTE-Z" in flagged_ids
+    assert "VOICE-A" in flagged_ids
+    assert all(
+        claim["source_evidence_id"] != "FIELD-NOTE-Z"
+        for claim in report["numeric_claims"]
+    )
+    field_note_flag = next(
+        item for item in report["flagged_evidence"] if item["evidence_id"] == "FIELD-NOTE-Z"
+    )
+    assert "field-note" in field_note_flag["reason"]
+
+
+def test_completion_claim_has_no_citation_when_no_assessment_record_exists():
+    """If no evidence record of type 'assessment' exists at all, the report
+    must not cite one anyway -- that would be a fabricated citation."""
+    data = load_source_data()
+    data["evidence"] = [item for item in data["evidence"] if item["type"] != "assessment"]
+
+    report = build_report("PRG-SYN", data)
+
+    assert report["completion_claim"]["value"] == "not stated"
+    assert report["completion_claim"]["source_evidence_id"] == ""
+    assert report["completion_claim"]["source_text"] == ""
+    assert "no record of type assessment present" in report["completion_claim"]["statement"]
+
+
 def test_report_can_be_sent_back_with_a_reason_then_reapproved():
     programme_id = "PRG-SYN"
     _approvals.pop(programme_id, None)

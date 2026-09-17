@@ -23,6 +23,7 @@ If the API runs elsewhere, start the frontend with `NEXT_PUBLIC_API_URL=http://h
 ## Real in the prototype vs simulated
 
 - Implemented: a pure deterministic report builder reads the unchanged C08 `initial.json` and separates attendance, planned capacity, missing completion evidence, and the excluded ambiguous transcript.
+- Implemented: exclusion of narrative evidence (e.g. voice-note transcripts) is driven by an evidence-class table keyed on record type, not a hardcoded ID check — any evidence record of a non-authoritative type is excluded and shown with a type-derived reason, proven by a test using a second narrative record under an unrelated ID. Completion citation is similarly conditional: it only cites a source when an assessment-type record actually exists.
 - Implemented: `GET /programmes/PRG-SYN/report` returns the report and `POST /programmes/PRG-SYN/report/approve` changes only its status and simulated approval metadata.
 - Implemented: the UI reveals raw source text for every displayed claim and clearly labels VOICE-A as excluded from numeric citations.
 - Implemented: the report builder also returns partner_questions, a list of template-derived questions to ask the evidence partner (e.g. 'Please submit the completion assessment for Exercise week 1.'), derived only from existing flagged_evidence and completion_claim data, with no LLM involved, fully deterministic and tested.
